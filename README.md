@@ -16,13 +16,13 @@ npm install stac-layer
 
 # usage
 ```js
-import STACLayer from 'stac-layer';
+import stacLayer from 'stac-layer';
 
 // create your Leaflet map
 const map = L.map('map');
 
 // create layer
-const layer = new STACLayer(
+const layer = stacLayer(
   data,
   {
     displayPreview: false
@@ -31,12 +31,3 @@ const layer = new STACLayer(
 
 // fit map to layer
 map.fitBounds(layer.getBounds());
-
-// display just one band
-const layer = new StacLayer(
-  data,
-  {
-    band: 0 // starting at zero
-  }
-)
-```
