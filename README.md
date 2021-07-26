@@ -29,5 +29,8 @@ const layer = stacLayer(
   }
 );
 
+// add layer to map
+layer.addTo(map);
+
 // fit map to layer
 map.fitBounds(layer.getBounds());
