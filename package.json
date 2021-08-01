@@ -38,7 +38,7 @@
     "chroma-js": "^1.4.1",
     "georaster-layer-for-leaflet": "^2.0.0",
     "get-depth": "^0.0.1",
-    "reproject-bbox": "^0.0.1"
+    "reproject-bbox": "^0.0.3"
   },
   "devDependencies": {
     "babel-loader": "^8.2.2",
