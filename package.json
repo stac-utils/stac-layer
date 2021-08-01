@@ -34,6 +34,7 @@
   },
   "homepage": "https://github.com/DanielJDufour/stac-layer#readme",
   "dependencies": {
+    "@babel/core": "^7.14.8",
     "chroma-js": "^1.4.1",
     "georaster-layer-for-leaflet": "^2.0.0",
     "get-depth": "^0.0.1",

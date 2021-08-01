@@ -2,7 +2,7 @@ const path = require("path");
 
 module.exports = {
   watch: process.env.WEBPACK_WATCH === "true",
-  entry: "./src/stac-layer.js",
+  entry: "./src/index.js",
   mode: "production",
   target: "web",
   output: {
