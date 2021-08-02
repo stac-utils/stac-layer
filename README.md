@@ -22,7 +22,7 @@ import stacLayer from 'stac-layer';
 const map = L.map('map');
 
 // create layer
-const layer = stacLayer(
+const layer = await stacLayer(
   data,
   {
     displayPreview: false
