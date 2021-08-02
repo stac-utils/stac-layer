@@ -184,7 +184,6 @@ const stacLayer = async (data, options = {}) => {
         const georaster = await parseGeoRaster(href);
         const georasterLayer = new GeoRasterLayer({
           georaster,
-          noWrap: true,
           ...options
         });
         layerGroup.addLayer(georasterLayer);
@@ -199,7 +198,6 @@ const stacLayer = async (data, options = {}) => {
         const georaster = await parseGeoRaster(href);
         const georasterLayer = new GeoRasterLayer({
           georaster,
-          noWrap: true,
           ...options
         });
         layerGroup.addLayer(georasterLayer);
@@ -218,7 +216,6 @@ const stacLayer = async (data, options = {}) => {
         ];
         const georasterLayer = new GeoRasterLayer({
           georasters,
-          noWrap: true,
           ...options
         });
         layerGroup.addLayer(georasterLayer);
@@ -248,7 +245,6 @@ const stacLayer = async (data, options = {}) => {
         const georaster = await parseGeoRaster(href);
         const georasterLayer = new GeoRasterLayer({
           georaster,
-          noWrap: true,
           ...options
         });
         if (debugLevel >= 1) console.log("[stac-layer] successfully created layer for", asset);
@@ -301,7 +297,6 @@ const stacLayer = async (data, options = {}) => {
         const georaster = await parseGeoRaster(href);
         const georasterLayer = new GeoRasterLayer({
           georaster,
-          noWrap: true,
           ...options
         });
         layerGroup.addLayer(georasterLayer);
