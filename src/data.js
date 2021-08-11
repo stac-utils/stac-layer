@@ -9,6 +9,7 @@ export const DATA_TYPES = {
 };
 
 export const MIME_TYPES = {
+  COG: ["image/tiff; application=geotiff; profile=cloud-optimized", "image/vnd.stac.geotiff; cloud-optimized=true"],
   GEOTIFF: [
     "application/geotiff",
     "image/tiff; application=geotiff;",

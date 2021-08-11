@@ -40,6 +40,8 @@
           displayPreview: false
         });
 
+        lyr.on('click', console.log);
+
         lyr.addTo(map);
 
         map.fitBounds(lyr.getBounds());

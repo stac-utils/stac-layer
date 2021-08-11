@@ -3,16 +3,18 @@
   "version": "0.0.0",
   "description": "Visualize a STAC Item or Collection on a Leaflet Map",
   "main": "src/index.js",
+  "module": "src/index.js",
   "directories": {
     "test": "test"
   },
   "type": "module",
   "scripts": {
     "build": "webpack",
-    "dev": "concurrently \"npx snowpack build --watch\" \"cd build && npx http-server\"",
-    "format": "npx prettier --arrow-parens=avoid --print-width=100 --trailing-comma=none --write *.js */*.js",
+    "dev": "concurrently \"npx snowpack build --polyfill-node --watch\" \"cd build && npx http-server\"",
+    "format": "npx prettier --arrow-parens=avoid --print-width=120 --trailing-comma=none --write src/*.js",
     "serve": "HOST=0.0.0.0 http-server --cors",
-    "test": "node test.js"
+    "test": "node test.js",
+    "tiler": "docker run --name titiler -p 8000:8000 --env PORT=8000 --rm -t developmentseed/titiler"
   },
   "repository": {
     "type": "git",
@@ -36,6 +38,7 @@
   "dependencies": {
     "@babel/core": "^7.14.8",
     "chroma-js": "^1.4.1",
+    "dynamic-client": "^0.0.1",
     "georaster-layer-for-leaflet": "^2.0.2",
     "get-depth": "^0.0.1",
     "reproject-bbox": "^0.0.3"
@@ -43,8 +46,10 @@
   "devDependencies": {
     "babel-loader": "^8.2.2",
     "concurrently": "^6.2.0",
+    "eslint-config-prettier": "^8.3.0",
     "georaster": "^1.5.4",
     "http-server": "^0.12.3",
+    "leaflet": "^1.7.1",
     "parse-filename": "^0.0.0",
     "snowpack": "^3.7.1",
     "webpack": "^5.42.0",

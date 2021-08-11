@@ -37,6 +37,8 @@
           resolution: 256
         });
 
+        lyr.on('click', console.log);
+
         lyr.addTo(map);
 
         map.fitBounds(lyr.getLayers()[0].getBounds());

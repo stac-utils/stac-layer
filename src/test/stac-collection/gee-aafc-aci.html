@@ -31,7 +31,11 @@
 
       fetch(url_to_stac_collection).then(res => res.json()).then(async collection => {
 
-        const lyr = await L.stacLayer(collection, { debugLevel: 2 });
+        const lyr = await L.stacLayer(collection, {
+          debugLevel: 2,
+        });
+
+        lyr.on('click', console.log);
 
         lyr.addTo(map);
 

@@ -35,6 +35,8 @@
 
         lyr.addTo(map);
 
+        lyr.on('click', console.log);
+
         map.fitBounds(lyr.getLayers()[0].getBounds());
       });
     </script>

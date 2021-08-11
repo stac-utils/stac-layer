@@ -105,3 +105,9 @@ dist
 
 # Backup files
 *bak*
+
+# Dev files
+build/
+
+# Notes
+*.txt

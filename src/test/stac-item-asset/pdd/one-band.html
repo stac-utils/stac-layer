@@ -34,10 +34,16 @@
         console.log("asset:", asset);
 
         const lyr = await L.stacLayer(asset, {
-          band: 0,
+          // display only red band
+          pixelValuesToColorFn: ([r, g, b, a]) => {
+            const max = Math.pow(2, 15);
+            return `rgb(${(r / max) * 255},${(r / max) * 255},${(r / max) * 255})`;
+          },
           bbox: feature.bbox,
           debugLevel: 2,
          });
+
+        lyr.on('click', console.log);
 
         lyr.addTo(map);
 

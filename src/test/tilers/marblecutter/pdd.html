@@ -30,19 +30,12 @@
       const url_to_stac_item = "https://raw.githubusercontent.com/cholmes/pdd-stac/beta2/disasters/hurricane-harvey/hurricane-harvey-0831/20170831_172754_101c/20170831_172754_101c.json";
 
       fetch(url_to_stac_item).then(res => res.json()).then(async feature => {
-        const asset = feature.assets.analytic;
-        console.log("asset:", asset);
-
-        const lyr = await L.stacLayer(asset, {
-          bbox: feature.bbox,
-          debugLevel: 2,
-          pixelValuesToColorFn: ([r, g, b, a]) => {
-            const max = Math.pow(2, 15);
-            return `rgb(${(r / max) * 255},${(g / max) * 255},${(b / max) * 255})`;
-          }
-         });
+        const options = { debugLevel: 2, tileUrlTemplate: "http://tiles.rdnt.io/tiles/{z}/{x}/{y}?url={url}" };
+        const lyr = await L.stacLayer(feature, options);
 
         lyr.addTo(map);
+
+        lyr.on('click', console.log);
 
         map.fitBounds(lyr.getBounds());
       });
