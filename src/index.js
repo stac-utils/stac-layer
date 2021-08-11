@@ -3,12 +3,12 @@ import parseGeoRaster from "georaster";
 import GeoRasterLayer from "georaster-layer-for-leaflet";
 import parseFileName from "parse-filename";
 import getDepth from "get-depth";
+import reprojectBoundingBox from "reproject-bbox";
 
 import bboxToLatLngBounds from "./utils/bboxToLatLngBounds.js";
 import bboxLayer from "./utils/bboxLayer.js";
 import isBoundingBox from "./utils/is-bounding-box.js";
-import reprojectBoundingBox from "reproject-bbox";
-import TiTiler from "./utils/titiler";
+import TiTiler from "./utils/titiler.js";
 import { DATA_TYPES, GEORASTER_KEYS, MIME_TYPES } from "./data.js";
 import pick from "./utils/pick.js";
 
