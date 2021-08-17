@@ -9,7 +9,9 @@ import bboxToLatLngBounds from "./utils/bboxToLatLngBounds.js";
 import bboxLayer from "./utils/bboxLayer.js";
 import isBoundingBox from "./utils/is-bounding-box.js";
 import TiTiler from "./utils/titiler.js";
-import { DATA_TYPES, GEORASTER_KEYS, MIME_TYPES } from "./data.js";
+import toAbsolute from "./utils/to-absolute.js";
+import isRelative from "./utils/is-relative.js";
+import { DATA_TYPES, EVENT_DATA_TYPES, GEORASTER_KEYS, MIME_TYPES } from "./data.js";
 import pick from "./utils/pick.js";
 
 // utility functions
@@ -49,10 +51,19 @@ const hasVisualAsset = assets => !!findVisualAsset(assets);
 
 const hasSeparatedRGB = assets => findBand(assets, "red") && findBand(assets, "green") && findBand(assets, "blue");
 
-const getLinkByRel = (links, key) =>
-  links.find(ln => typeof ln === "object" && ln.rel.toLowerCase() === key.toLowerCase());
+const findLinks = data => {
+  if (Array.isArray(data)) return data;
+  else if (data.links) return data.links;
+};
 
-const findSelfHref = data => (data.links || data).find(lnk => lnk?.rel.toLowerCase() === "self")?.href;
+const findLink = (data, key) => {
+  const links = findLinks(data);
+  key = key.toLowerCase();
+  if (links) links.find(ln => typeof ln === "object" && ln.rel.toLowerCase() === key);
+};
+
+const findSelf = data => findLink(data, "self");
+const findSelfHref = data => findSelf(data)?.href;
 
 const getBoundingBox = item => {
   if (Array.isArray(item.bbox)) {
@@ -116,6 +127,10 @@ function getDataType(data) {
     return DATA_TYPES.STAC_ASSET;
   }
 
+  if (Array.isArray(data) && data.every(it => "href" in it && "title" in it)) {
+    return DATA_TYPES.STAC_ASSETS;
+  }
+
   throw new Error("[stac-layer] couldn't determine type of the input data");
 }
 
@@ -131,6 +146,22 @@ const stacLayer = async (data, options = {}) => {
   if (options.titiler) options.titiler.replace(/\/$/, "");
 
   const displayPreview = [true, false].includes(options.displayPreview) ? options.displayPreview : true;
+
+  // get link to self, which we might need later
+  const selfHref = findSelfHref(data);
+  if (debugLevel >= 2) console.log("[stac-layer] self href:", selfHref);
+
+  const baseUrl = options.baseUrl || selfHref?.substring(0, selfHref.lastIndexOf("/") + 1);
+  // add a / to the end of the base url to make sure toAbsolute works later on
+  if (baseUrl && !baseUrl.endsWith("/")) baseUrl += "/";
+  if (debugLevel >= 2) console.log("[stac-layer] base url:", baseUrl);
+
+  const toAbsoluteHref = href => {
+    if (!href) throw new Error("[stac-layer] can't convert nothing to an absolute href");
+    if (!isRelative(href)) return href;
+    if (!baseUrl) throw new Error(`[stact-layer] can't determine an absolute url for "${href}" without a baseUrl`);
+    return toAbsolute(href, baseUrl);
+  };
 
   const layerGroup = L.layerGroup();
 
@@ -149,7 +180,24 @@ const stacLayer = async (data, options = {}) => {
   // and is set to the provided data or the data used to create stacLayer
   const bindDataToClickEvent = (lyr, _data) => {
     lyr.on("click", evt => {
-      evt.stac = typeof _data === "function" ? _data(evt) : _data || data;
+      evt.stac = { data: typeof _data === "function" ? _data(evt) : _data || data };
+      const clickedDataType = getDataType(evt.stac.data);
+      if (
+        [
+          DATA_TYPES.STAC_COLLECTION,
+          DATA_TYPES.STAC_API_COLLECTIONS,
+          DATA_TYPES.ITEM_COLLECTION,
+          DATA_TYPES.STAC_API_ITEMS
+        ].includes(clickedDataType)
+      ) {
+        evt.stac.type = EVENT_DATA_TYPES.COLLECTION;
+      } else if ([DATA_TYPES.STAC_ITEM].includes(clickedDataType)) {
+        evt.stac.type = EVENT_DATA_TYPES.FEATURE;
+      } else if ([DATA_TYPES.STAC_ASSETS].includes(clickedDataType)) {
+        evt.stac.type = EVENT_DATA_TYPES.ASSETS;
+      } else if ([DATA_TYPES.STAC_ASSET].includes(clickedDataType)) {
+        evt.stac.type = EVENT_DATA_TYPES.ASSET;
+      }
       onClickHandlers.forEach(handleOnClick => {
         try {
           handleOnClick(evt);
@@ -164,16 +212,15 @@ const stacLayer = async (data, options = {}) => {
     // Item Collection aka GeoJSON Feature Collection where each Feature is a STAC Item
     // STAC API /items endpoint also returns a similar Feature Collection
     const lyr = L.geoJSON(data, options);
-    bindDataToClickEvent(lyr, e => e?.layer?.feature || data);
+    bindDataToClickEvent(lyr, e => e?.layer?.feature);
     layerGroup.addLayer(lyr);
   } else if (dataType === DATA_TYPES.STAC_COLLECTION) {
     // STAC Collection
-    const { links } = data;
-    const preview = links.find(ln => ln.rel.toLowerCase() === "preview");
+    const preview = findLink(data, "preview");
     if (debugLevel >= 1) console.log("[stac-layer] preview is ", preview);
 
     if (displayPreview && preview && isImage(preview?.type)) {
-      const { href } = preview;
+      const href = toAbsoluteHref(preview.href);
       if (debugLevel >= 1) console.log("[stac-layer] href is " + href);
       const bbox = getBoundingBox(data);
       if (debugLevel >= 1) console.log("[stac-layer] bbox is " + bbox);
@@ -223,7 +270,7 @@ const stacLayer = async (data, options = {}) => {
       if (debugLevel >= 1) console.log(`[stac-layer] there is only one asset and it is a Cloud-Optimized GeoTIFF`);
       const asset = assets[assetKeys[0]];
       try {
-        const { href } = asset;
+        const href = toAbsoluteHref(asset?.href);
         if (options.tileUrlTemplate) {
           const tileLayerOptions = { ...options, url: href };
           const tileLayer = L.tileLayer(options.tileUrlTemplate, tileLayerOptions);
@@ -245,7 +292,7 @@ const stacLayer = async (data, options = {}) => {
       if (debugLevel >= 1) console.log(`[stac-layer] found visual asset, so displaying that`);
       // default to using the visual asset
       const { asset, key } = findVisualAsset(assets);
-      const { href } = asset;
+      const href = toAbsoluteHref(asset.href);
       if (options.buildTileUrlTemplate) {
         const tileUrlTemplate = options.buildTileUrlTemplate({
           href,
@@ -298,7 +345,6 @@ const stacLayer = async (data, options = {}) => {
         if (options.titiler) {
           if (debugLevel >= 1) console.log("[stac-layer] using titiler instance: " + options.titiler);
           const titiler = await TiTiler({ url: options.titiler });
-          const selfHref = findSelfHref(data);
           if (selfHref) {
             if (debugLevel >= 1) console.log("[stac-layer] using self link with href: " + selfHref);
             const supportedAssets = await titiler.stac.assets.get({ url: selfHref });
@@ -348,15 +394,15 @@ const stacLayer = async (data, options = {}) => {
       } else {
         try {
           const georasters = [
-            await parseGeoRaster(red.href),
-            await parseGeoRaster(green.href),
-            await parseGeoRaster(blue.href)
+            await parseGeoRaster(toAbsoluteHref(red.href)),
+            await parseGeoRaster(toAbsoluteHref(green.href)),
+            await parseGeoRaster(toAbsoluteHref(blue.href))
           ];
           const georasterLayer = new GeoRasterLayer({
             georasters,
             ...options
           });
-          bindDataToClickEvent(tileLayer, [red, green, blue]);
+          bindDataToClickEvent(georasterLayer, [red, green, blue]);
           layerGroup.addLayer(georasterLayer);
         } catch (error) {
           success = false;
@@ -375,7 +421,7 @@ const stacLayer = async (data, options = {}) => {
           const { thumbnail } = assets;
           if (debugLevel >= 2) console.log("[stac-layer] thumbnail is ", thumbnail);
           if (displayPreview && thumbnail && isImage(thumbnail?.type)) {
-            const { href, rel, type } = thumbnail;
+            const href = toAbsoluteHref(thumbnail.href);
             if (href.startsWith("s3://"))
               console.log("[stac-layer] we have no way of visualizing thumbnails via S3 protocol");
             const lyr = L.imageOverlay(href, bounds);
@@ -393,7 +439,7 @@ const stacLayer = async (data, options = {}) => {
       try {
         const asset = cogs[0];
         const key = assetEntries.find(([key, value]) => value === asset)[0];
-        const { href } = asset;
+        const href = toAbsoluteHref(asset?.href);
         if (options.buildTileUrlTemplate) {
           const tileUrlTemplate = options.buildTileUrlTemplate({
             href,
@@ -421,7 +467,7 @@ const stacLayer = async (data, options = {}) => {
             ...options
           });
           if (debugLevel >= 1) console.log("[stac-layer] successfully created layer for", asset);
-          bindDataToClickEvent(georasterLayer, georasterLayer);
+          bindDataToClickEvent(georasterLayer, asset);
           layerGroup.addLayer(georasterLayer);
         }
       } catch (error) {
@@ -431,22 +477,22 @@ const stacLayer = async (data, options = {}) => {
 
     if ("geometry" in data && typeof data.geometry === "object") {
       const lyr = L.geoJSON(data.geometry, {
-        fillOpacity: layerGroup.getLayers().length > 0 ? 0 : undefined,
+        fillOpacity: layerGroup.getLayers().length > 0 ? 0 : 0.2,
         ...options
       });
-      bindDataToClickEvent(lyr, data);
+      bindDataToClickEvent(lyr);
       layerGroup.addLayer(lyr);
     } else if ("bbox" in data && Array.isArray(data.bbox) && data.bbox.length === 4) {
       const lyr = L.bboxLayer(data, {
-        fillOpacity: layerGroup.getLayers().length > 0 ? 0 : undefined,
+        fillOpacity: layerGroup.getLayers().length > 0 ? 0 : 0.2,
         ...options
       });
-      bindDataToClickEvent(lyr, data);
+      bindDataToClickEvent(lyr);
       layerGroup.addLayer(lyr);
     }
   } else if (dataType === DATA_TYPES.STAC_ASSET) {
-    const { href, roles, type } = data;
-
+    const { type } = data;
+    const href = toAbsoluteHref(data.href);
     let bounds;
     if (options.latLngBounds) {
       bounds = options.latLngBounds;
@@ -468,7 +514,7 @@ const stacLayer = async (data, options = {}) => {
       }
 
       const lyr = L.imageOverlay(href, bounds);
-      bindDataToClickEvent(lyr, data);
+      bindDataToClickEvent(lyr);
       layerGroup.addLayer(lyr);
       fillOpacity = 0;
     } else if (MIME_TYPES.GEOTIFF.includes(type)) {
@@ -485,7 +531,7 @@ const stacLayer = async (data, options = {}) => {
         if (debugLevel >= 2) console.log(`[stac-layer] built tile url template: "${tileUrlTemplate}"`);
         const tileLayerOptions = { ...options, bounds, url: href };
         const tileLayer = L.tileLayer(tileUrlTemplate, tileLayerOptions);
-        bindDataToClickEvent(tileLayer, data);
+        bindDataToClickEvent(tileLayer);
         layerGroup.addLayer(tileLayer);
         fillOpacity = 0;
       } else {
@@ -495,7 +541,7 @@ const stacLayer = async (data, options = {}) => {
             georaster,
             ...options
           });
-          bindDataToClickEvent(georasterLayer, data);
+          bindDataToClickEvent(georasterLayer);
           layerGroup.addLayer(georasterLayer);
           const bbox = [georaster.xmin, georaster.ymin, georaster.xmax, georaster.ymax];
           const reprojectedBoundingBox = reprojectBoundingBox({
@@ -514,7 +560,7 @@ const stacLayer = async (data, options = {}) => {
     if (bounds) {
       if (debugLevel >= 1) console.log("[stac-layer] adding bounds layer");
       const lyr = L.rectangle(bounds, { fillOpacity });
-      bindDataToClickEvent(lyr, data);
+      bindDataToClickEvent(lyr);
       layerGroup.addLayer(lyr);
     }
   } else {

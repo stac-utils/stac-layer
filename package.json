@@ -41,7 +41,8 @@
     "dynamic-client": "^0.0.1",
     "georaster-layer-for-leaflet": "^2.0.2",
     "get-depth": "^0.0.1",
-    "reproject-bbox": "^0.0.3"
+    "reproject-bbox": "^0.0.3",
+    "urijs": "^1.19.7"
   },
   "devDependencies": {
     "babel-loader": "^8.2.2",
