@@ -88,9 +88,10 @@ const getLatLngBounds = item => {
 function getDataType(data) {
   if (Array.isArray(data.links)) {
     const href = findSelfHref(data);
+    // don't use new URL(href).pathname because
+    // sometimes href is relative and construction fails
     if (typeof href === "string") {
-      const { pathname } = new URL(href);
-      if (pathname.match(/collections\/[^/]+\/items$/)) {
+      if (href.match(/collections\/[^/]+\/items$/)) {
         return DATA_TYPES.STAC_API_ITEMS;
       }
     }

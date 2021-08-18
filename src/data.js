@@ -2,7 +2,7 @@ export const DATA_TYPES = {
   STAC_ITEM: "STAC Item",
   STAC_CATALOG: "STAC Catalog",
   STAC_COLLECTION: "STAC Collection",
-  ITEM_COLLECTION: "ITEM Collection",
+  ITEM_COLLECTION: "Item Collection",
   STAC_API_COLLECTIONS: "STAC API Collections",
   STAC_API_ITEMS: "STAC API Items",
   STAC_ASSETS: "STAC Assets",
