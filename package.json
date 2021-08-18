@@ -7,6 +7,17 @@
   "directories": {
     "test": "test"
   },
+  "files": [
+    "src/index.js",
+    "src/data.js",
+    "utils/bboxLayer.js",
+    "utils/bbotToLatLngBounds.js",
+    "utils/is-bounding-box.js",
+    "utils/is-relative.js",
+    "utils/pick.js",
+    "utils/titiler.js",
+    "utils/to-absolute.js"
+  ],
   "type": "module",
   "scripts": {
     "build": "webpack",

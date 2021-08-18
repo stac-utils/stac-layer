@@ -86,16 +86,17 @@ const getLatLngBounds = item => {
 };
 
 function getDataType(data) {
-  if (Array.isArray(data.links)) {
-    const href = findSelfHref(data);
-    // don't use new URL(href).pathname because
-    // sometimes href is relative and construction fails
-    if (typeof href === "string") {
-      if (href.match(/collections\/[^/]+\/items$/)) {
-        return DATA_TYPES.STAC_API_ITEMS;
-      }
-    }
-  }
+  // no longer used
+  // if (Array.isArray(data.links)) {
+  //   const href = findSelfHref(data);
+  //   // don't use new URL(href).pathname because
+  //   // sometimes href is relative and construction fails
+  //   if (typeof href === "string") {
+  //     if (href.match(/collections\/[^/]+\/items$/)) {
+  //       return DATA_TYPES.STAC_API_ITEMS;
+  //     }
+  //   }
+  // }
 
   const hasLinks = Array.isArray(data.links);
 
