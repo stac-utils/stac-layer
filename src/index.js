@@ -59,7 +59,7 @@ const findLinks = data => {
 const findLink = (data, key) => {
   const links = findLinks(data);
   key = key.toLowerCase();
-  if (links) links.find(ln => typeof ln === "object" && ln.rel.toLowerCase() === key);
+  if (links) return links.find(ln => typeof ln === "object" && ln.rel.toLowerCase() === key);
 };
 
 const findSelf = data => findLink(data, "self");
