@@ -52,7 +52,7 @@
     "@babel/core": "^7.14.8",
     "chroma-js": "^1.4.1",
     "dynamic-client": "^0.0.1",
-    "georaster-layer-for-leaflet": "^2.0.2",
+    "georaster-layer-for-leaflet": "^3.0.0",
     "get-depth": "^0.0.1",
     "reproject-bbox": "^0.0.3",
     "urijs": "^1.19.7"

@@ -237,7 +237,7 @@ const stacLayer = async (data, options = {}) => {
       const lyr = bboxLayer(bbox, options);
       bindDataToClickEvent(lyr);
       layerGroup.addLayer(lyr);
-    } else if (Array.isArray(bbox) && bbox.length === 1) {
+    } else if (Array.isArray(bbox) && bbox.length === 1 && bbox.every(n => typeof n === "number")) {
       const lyr = bboxLayer(bbox[0], options);
       bindDataToClickEvent(lyr);
       layerGroup.addLayer(lyr);
@@ -571,14 +571,25 @@ const stacLayer = async (data, options = {}) => {
 
   // use the extent of the vector layer
   layerGroup.getBounds = () => {
-    const bounds = layerGroup
-      .getLayers()
-      .find(lyr => lyr.toGeoJSON)
-      .getBounds();
+    const lyr = layerGroup.getLayers().find(lyr => lyr.toGeoJSON);
+    if (!lyr) {
+      if (layerGroup.options.debugLevel >= 1) {
+        console.log(
+          "[stac-layer] unable to get bounds without a vector layer. " +
+            "This often happens when there was an issue determining the bounding box of the provided data."
+        );
+      }
+      return;
+    }
+    const bounds = lyr.getBounds();
     const southWest = [bounds.getSouth(), bounds.getWest()];
     const northEast = [bounds.getNorth(), bounds.getEast()];
     return [southWest, northEast];
   };
+
+  if (!layerGroup.options) layerGroup.options = {};
+
+  layerGroup.options.debugLevel = debugLevel;
 
   return layerGroup;
 };
