@@ -82,7 +82,8 @@ const featureCollection = ....; // a GeoJSON Feature Collection of STAC Features
 
 const layer = stacLayer(featureCollection);
 layer.on("click", e => {
-  const feature = e.stac;
-  // feature is the item that was clicked in the collection
+  const { type, data } = e.stac;
+  // type is one of "Collection", "Feature", "Assets", or "Asset"
+  // data is the item that was clicked in the collection
 });
 ```
