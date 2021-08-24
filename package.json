@@ -11,7 +11,7 @@
     "src/index.js",
     "src/data.js",
     "src/utils/bboxLayer.js",
-    "src/utils/bbotToLatLngBounds.js",
+    "src/utils/bboxToLatLngBounds.js",
     "src/utils/is-bounding-box.js",
     "src/utils/is-relative.js",
     "src/utils/pick.js",
