@@ -1,7 +1,6 @@
 import L from "leaflet";
 import parseGeoRaster from "georaster";
 import GeoRasterLayer from "georaster-layer-for-leaflet";
-import parseFileName from "parse-filename";
 import getDepth from "get-depth";
 import reprojectBoundingBox from "reproject-bbox";
 
@@ -11,15 +10,11 @@ import isBoundingBox from "./utils/is-bounding-box.js";
 import TiTiler from "./utils/titiler.js";
 import toAbsolute from "./utils/to-absolute.js";
 import isRelative from "./utils/is-relative.js";
-import { DATA_TYPES, EVENT_DATA_TYPES, GEORASTER_KEYS, MIME_TYPES } from "./data.js";
-import pick from "./utils/pick.js";
+import { DATA_TYPES, EVENT_DATA_TYPES, MIME_TYPES } from "./data.js";
 
 // utility functions
 // get asset extension, if type and if missing type or maybe throw an error
 // that item is missing a type
-
-const filterRels = rels =>
-  !["self", "parent", "root", "related", "license", "successor-version", "cite-as"].includes(rel);
 
 const isJPG = type => !!type.match(/^image\/jpe?g/i);
 const isPNG = type => !!type.match(/^image\/png/i);
