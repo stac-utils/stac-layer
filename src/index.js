@@ -237,7 +237,7 @@ const stacLayer = async (data, options = {}) => {
       const lyr = bboxLayer(bbox, options);
       bindDataToClickEvent(lyr);
       layerGroup.addLayer(lyr);
-    } else if (Array.isArray(bbox) && bbox.length === 1 && bbox.every(n => typeof n === "number")) {
+    } else if (Array.isArray(bbox) && bbox.length === 1 && isBoundingBox(bbox[0])) {
       const lyr = bboxLayer(bbox[0], options);
       bindDataToClickEvent(lyr);
       layerGroup.addLayer(lyr);
