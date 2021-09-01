@@ -50,11 +50,13 @@
   "homepage": "https://github.com/DanielJDufour/stac-layer#readme",
   "dependencies": {
     "@babel/core": "^7.14.8",
+    "@turf/boolean-point-in-polygon": "^6.5.0",
     "chroma-js": "^1.4.1",
     "dynamic-client": "^0.0.1",
     "georaster": "^1.5.4",
-    "georaster-layer-for-leaflet": "^3.0.0",
+    "georaster-layer-for-leaflet": "^3.1.1",
     "get-depth": "^0.0.1",
+    "leaflet": "^1.7.1",
     "reproject-bbox": "^0.0.3",
     "urijs": "^1.19.7"
   },
@@ -63,7 +65,6 @@
     "concurrently": "^6.2.0",
     "eslint-config-prettier": "^8.3.0",
     "http-server": "^0.12.3",
-    "leaflet": "^1.7.1",
     "snowpack": "^3.7.1",
     "webpack": "^5.42.0",
     "webpack-cli": "^4.7.2"

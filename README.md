@@ -72,6 +72,14 @@ const layer = await stacLayer(data, {
   }
 });
 ```
+### useTileLayerAsFallback
+If you'd like to only use a tiler if [GeoRasterLayer](https://github.com/geotiff/georaster-layer-for-leaflet) fails, set `useTileLayerAsFallback` to `true`.
+```js
+const layer = await stacLayer(data, {
+  tileUrlTemplate: "https://tiles.rdnt.io/tiles/{z}/{x}/{y}@2x?url={url}",
+  useTileLayerAsFallback: true
+});
+```
 
 ## listening to click events
 STAC Layer added a "stac" property to Leaflet's onClick events that include the STAC information
