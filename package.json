@@ -16,6 +16,7 @@
     "src/utils/is-relative.js",
     "src/utils/pick.js",
     "src/utils/titiler.js",
+    "src/utils/titiler-layer.js",
     "src/utils/to-absolute.js",
     "dist/stac-layer.min.js",
     "dist/stac-layer.min.js.map"
