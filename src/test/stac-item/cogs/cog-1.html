@@ -31,6 +31,7 @@
 
       fetch(url_to_stac_item).then(res => res.json()).then(async item => {
         const lyr = await L.stacLayer(item, { debugLevel: 2 });
+        console.log("lyr.stac:", lyr.stac);
         lyr.on('click', console.log);
         lyr.addTo(map);
         map.fitBounds(lyr.getBounds());

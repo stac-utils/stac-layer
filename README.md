@@ -95,3 +95,29 @@ layer.on("click", e => {
   // data is the item that was clicked in the collection
 });
 ```
+
+## accessing meta information
+Sometimes you might like to know information about what is being visualized.
+You can access this information through the `stac` key attached to the layer.
+```js
+const layer = await stacLayer(data, options);
+```
+`layer.stac` could be the following
+```js
+{
+  assets: [
+    {
+      "key": "visual",
+      "asset": {
+        "href": "https://storage.googleapis.com/pdd-stac/disasters/hurricane-harvey/0831/20170831_172754_101c_3b_Visual.tif",
+        "type": "image/vnd.stac.geotiff; cloud-optimized=true",
+        "title": "PSScene3Band Visual GeoTIFF",
+        "pl:type": "https://api.planet.com/data/v1/asset-types/visual",
+        "roles": [
+          "visual"
+        ]
+      }
+    }
+  ]
+}
+```

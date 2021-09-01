@@ -25,10 +25,10 @@ const isAssetCOG = asset => MIME_TYPES.COG.includes(asset.type);
 const bandName = asset => asset?.["eo:bands"]?.[0]?.name;
 
 const findBand = (assets, bandName) => {
-  for (let assetKey in assets) {
-    const asset = assets[assetKey];
+  for (let key in assets) {
+    const asset = assets[key];
     if (asset?.["eo:bands"]?.[0]?.common_name === bandName) {
-      return asset;
+      return { key, asset };
     }
   }
 };
@@ -316,13 +316,14 @@ const stacLayer = async (data, options = {}) => {
             if (debugLevel >= 2) console.log(`[stac-layer] built tile url template: "${tileUrlTemplate}"`);
             const tileLayerOptions = { bounds, ...options, url: href };
             const tileLayer = L.tileLayer(tileUrlTemplate, tileLayerOptions);
+            layerGroup.stac = { assets: [{ key, asset }] };
             bindDataToClickEvent(tileLayer, asset);
             layerGroup.addLayer(tileLayer);
           } else if (options.tileUrlTemplate) {
             const tileLayerOptions = { bounds, ...options, url: href };
             const tileLayer = L.tileLayer(options.tileUrlTemplate, tileLayerOptions);
             bindDataToClickEvent(tileLayer, asset);
-            console.log("tileLayer:", tileLayer);
+            layerGroup.stac = { assets: [{ key, asset }] };
             layerGroup.addLayer(tileLayer);
             if (debugLevel >= 2) console.log("[stac-layer] added tile layer to layer group");
           }
@@ -337,6 +338,7 @@ const stacLayer = async (data, options = {}) => {
               ...options
             });
             bindDataToClickEvent(georasterLayer, asset);
+            layerGroup.stac = { assets: [{ key, asset }] };
             setFallback(georasterLayer, addTileLayer);
             layerGroup.addLayer(georasterLayer);
           } catch (error) {
@@ -376,12 +378,14 @@ const stacLayer = async (data, options = {}) => {
           if (debugLevel >= 2) console.log(`[stac-layer] built tile url template: "${tileUrlTemplate}"`);
           const tileLayerOptions = { bounds, ...options, url: href };
           const tileLayer = L.tileLayer(tileUrlTemplate, tileLayerOptions);
+          layerGroup.stac = { assets: [{ key, asset }] };
           bindDataToClickEvent(tileLayer, asset);
           layerGroup.addLayer(tileLayer);
         } else if (options.tileUrlTemplate) {
           if (debugLevel >= 2) console.log(`[stac-layer] using tile url template: "${options.tileUrlTemplate}"`);
           const tileLayerOptions = { bounds, ...options, url: href };
           const tileLayer = L.tileLayer(options.tileUrlTemplate, tileLayerOptions);
+          layerGroup.stac = { assets: [{ key, asset }] };
           bindDataToClickEvent(tileLayer, asset);
           layerGroup.addLayer(tileLayer);
         }
@@ -398,6 +402,7 @@ const stacLayer = async (data, options = {}) => {
             ...options,
             debugLevel: (options.debugLevel || 1) - 1
           });
+          layerGroup.stac = { assets: [{ key, asset }] };
           bindDataToClickEvent(georasterLayer, asset);
           setFallback(georasterLayer, addTileLayer);
           layerGroup.addLayer(georasterLayer);
@@ -417,10 +422,10 @@ const stacLayer = async (data, options = {}) => {
       }
     } else if (hasSeparatedRGB(assets)) {
       if (debugLevel >= 1) console.log(`[stac-layer] Red, Green, and Blue bands are separated into different files`);
-      const red = findBand(assets, "red");
-      const green = findBand(assets, "green");
-      const blue = findBand(assets, "blue");
-      const rgbAssets = [red, green, blue];
+      const { key: redKey, asset: redAsset } = findBand(assets, "red");
+      const { key: greenKey, asset: greenAsset } = findBand(assets, "green");
+      const { key: blueKey, asset: blueAsset } = findBand(assets, "blue");
+      const rgbAssets = [redAsset, greenAsset, blueAsset];
       const assetNames = rgbAssets.map(bandName);
 
       // success means we have successfully added an image visualization (vs. vector)
@@ -436,6 +441,13 @@ const stacLayer = async (data, options = {}) => {
             url: selfHref
           });
           if (tileLayer) {
+            layerGroup.stac = {
+              assets: [
+                { key: redKey, asset: redAsset },
+                { key: greenKey, asset: greenAsset },
+                { key: blueKey, asset: blueAsset }
+              ]
+            };
             bindDataToClickEvent(tileLayer, rgbAssets);
             layerGroup.addLayer(tileLayer);
             return true;
@@ -444,7 +456,7 @@ const stacLayer = async (data, options = {}) => {
         return false;
       };
 
-      if (debugLevel >= 2) console.log(`[stac-layer]`, { red, green, blue });
+      if (debugLevel >= 2) console.log(`[stac-layer]`, { redAsset, greenAsset, blueAsset });
       if (rgbAssets.some(asset => asset.href.startsWith("s3://"))) {
         // GeoRasterLayer can't visualize S3, so just skip to trying titiler
         if (debugLevel >= 1) console.log("[stac-layer] at least one of the band files uses the s3 protocol");
@@ -464,14 +476,21 @@ const stacLayer = async (data, options = {}) => {
             // we start fetching the green's data
             // before the red's data has resolved
             const georasters = await Promise.resolve([
-              parseGeoRaster(toAbsoluteHref(red.href)),
-              parseGeoRaster(toAbsoluteHref(green.href)),
-              parseGeoRaster(toAbsoluteHref(blue.href))
+              parseGeoRaster(toAbsoluteHref(redAsset.href)),
+              parseGeoRaster(toAbsoluteHref(greenAsset.href)),
+              parseGeoRaster(toAbsoluteHref(blueAsset.href))
             ]);
             const georasterLayer = new GeoRasterLayer({
               georasters,
               ...options
             });
+            layerGroup.stac = {
+              assets: [
+                { key: redKey, asset: redAsset },
+                { key: greenKey, asset: greenAsset },
+                { key: blueKey, asset: blueAsset }
+              ]
+            };
             bindDataToClickEvent(georasterLayer, assets);
             setFallback(georasterLayer, addTileLayer);
             layerGroup.addLayer(georasterLayer);
@@ -498,6 +517,7 @@ const stacLayer = async (data, options = {}) => {
             if (href.startsWith("s3://"))
               console.log("[stac-layer] we have no way of visualizing thumbnails via S3 protocol");
             const lyr = L.imageOverlay(href, bounds);
+            layerGroup.stac = { assets: [{ key: "thumbnail", asset: thumbnail }] };
             // assume don't want to return only thumbnail information from click event,
             // because it wouldn't be that useful
             bindDataToClickEvent(lyr);
@@ -528,11 +548,13 @@ const stacLayer = async (data, options = {}) => {
             });
             const tileLayerOptions = { bounds, ...options, url: href };
             const tileLayer = L.tileLayer(tileUrlTemplate, tileLayerOptions);
+            layerGroup.stac = { assets: [{ key, asset }] };
             bindDataToClickEvent(tileLayer, asset);
             layerGroup.addLayer(tileLayer);
           } else if (options.tileUrlTemplate) {
             const tileLayerOptions = { bounds, ...options, url: href };
             const tileLayer = L.tileLayer(options.tileUrlTemplate, tileLayerOptions);
+            layerGroup.stac = { assets: [{ key, asset }] };
             bindDataToClickEvent(tileLayer, asset);
             layerGroup.addLayer(tileLayer);
           }
@@ -549,6 +571,7 @@ const stacLayer = async (data, options = {}) => {
             });
             if (debugLevel >= 1) console.log("[stac-layer] successfully created layer for", asset);
             bindDataToClickEvent(georasterLayer, asset);
+            layerGroup.stac = { assets: [{ key, asset }] };
             setFallback(georasterLayer, addTileLayer);
             layerGroup.addLayer(georasterLayer);
           } catch (error) {
@@ -619,12 +642,14 @@ const stacLayer = async (data, options = {}) => {
           if (debugLevel >= 2) console.log(`[stac-layer] built tile url template: "${tileUrlTemplate}"`);
           const tileLayerOptions = { ...options, bounds, url: href };
           const tileLayer = L.tileLayer(tileUrlTemplate, tileLayerOptions);
+          layerGroup.stac = { assets: [{ key: null, asset: data }] };
           bindDataToClickEvent(tileLayer);
           layerGroup.addLayer(tileLayer);
           fillOpacity = 0;
         } else if (options.tileUrlTemplate) {
           const tileLayerOptions = { bounds, ...options, url: href };
           const tileLayer = L.tileLayer(options.tileUrlTemplate, tileLayerOptions);
+          layerGroup.stac = { assets: [{ key: null, asset: data }] };
           bindDataToClickEvent(tileLayer);
           layerGroup.addLayer(tileLayer);
           fillOpacity = 0;
@@ -641,6 +666,7 @@ const stacLayer = async (data, options = {}) => {
               georaster,
               ...options
             });
+            layerGroup.stac = { assets: [{ key: null, asset: data }] };
             bindDataToClickEvent(georasterLayer);
             setFallback(georasterLayer, addTileLayer);
             layerGroup.addLayer(georasterLayer);
