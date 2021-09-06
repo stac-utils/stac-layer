@@ -105,18 +105,57 @@ const layer = await stacLayer(data, options);
 `layer.stac` could be the following
 ```js
 {
-  assets: [
+  "assets": [
     {
       "key": "visual",
       "asset": {
-        "href": "https://storage.googleapis.com/pdd-stac/disasters/hurricane-harvey/0831/20170831_172754_101c_3b_Visual.tif",
-        "type": "image/vnd.stac.geotiff; cloud-optimized=true",
-        "title": "PSScene3Band Visual GeoTIFF",
-        "pl:type": "https://api.planet.com/data/v1/asset-types/visual",
+        "href": "https://storage.googleapis.com/open-cogs/stac-examples/20201211_223832_CS2.tif",
+        "type": "image/tiff; application=geotiff; profile=cloud-optimized",
+        "title": "3-Band Visual",
         "roles": [
           "visual"
+        ],
+        "eo:bands": [
+          {
+            "name": "band3",
+            "common_name": "red",
+            "center_wavelength": 645,
+            "full_width_half_max": 90
+          },
+          {
+            "name": "band2",
+            "common_name": "green",
+            "center_wavelength": 560,
+            "full_width_half_max": 80
+          },
+          {
+            "name": "band1",
+            "common_name": "blue",
+            "center_wavelength": 470,
+            "full_width_half_max": 70
+          }
         ]
       }
+    }
+  ],
+  "bands": [
+    {
+      "name": "band3",
+      "common_name": "red",
+      "center_wavelength": 645,
+      "full_width_half_max": 90
+    },
+    {
+      "name": "band2",
+      "common_name": "green",
+      "center_wavelength": 560,
+      "full_width_half_max": 80
+    },
+    {
+      "name": "band1",
+      "common_name": "blue",
+      "center_wavelength": 470,
+      "full_width_half_max": 70
     }
   ]
 }

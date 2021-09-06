@@ -12,7 +12,7 @@ export default async function tiTilerLayer ({ assets, debugLevel=0, titiler, qui
     if (debugLevel >= 1) console.log("[titiler-layer] url:", url);
 
 
-    const client = await TiTiler({ titiler });
+    const client = await TiTiler({ url: titiler });
     if (debugLevel >= 2) console.log("[titiler-layer] client:", client);
 
     const supportedAssets = await client.stac.assets.get({ url });
