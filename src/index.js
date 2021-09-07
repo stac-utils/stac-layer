@@ -171,9 +171,19 @@ const stacLayer = async (data, options = {}) => {
 
   // if the given layer fails for any reason, remove it from the map, and call the fallback
   const setFallback = (lyr, fallback) => {
-    ["tileerror"].forEach(() => {
-      if (layerGroup.hasLayer(lyr)) layerGroup.removeLayer(lyr);
-      fallback();
+    let count = 0;
+    ["tileerror"].forEach(name => {
+      lyr.on(name, evt => {
+        count++;
+        // sometimes LeafletJS might issue multiple error events before
+        // the layer is removed from the map
+        // the following makes sure we only active the fallback sequence once
+        if (count === 1) {
+          console.log(`[stac-layer] activating fallback because "${evt.error.message}"`);
+          if (layerGroup.hasLayer(lyr)) layerGroup.removeLayer(lyr);
+          fallback();
+        }
+      });
     });
   };
 

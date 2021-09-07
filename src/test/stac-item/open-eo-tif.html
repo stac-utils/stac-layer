@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"/>
+    <style>
+      #map {
+        bottom: 0;
+        left: 0;
+        position: absolute;
+        right: 0;
+        top: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="map"></div>
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <script src="/index.js" type="module"></script>
+    <script type="module">
+      // initalize leaflet map
+      const map = L.map('map').setView([0, 0], 5);
+
+      // add OpenStreetMap basemap
+      L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png', {
+          attribution: '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
+      }).addTo(map);
+
+      const feature = {
+        "assets": {
+          "openEO.tif": {
+            "raster:bands": [
+              {
+                "name": "diff",
+                "statistics": {"minimum": 0, "maximum": 255},
+                "nodata": "nan"
+              },
+              {
+                "name": "VV",
+                "statistics": {"minimum": 0, "maximum": 255},
+                "nodata": "nan"
+              },
+              {
+                "name": "VH",
+                "statistics": {"minimum": 0, "maximum": 255},
+                "nodata": "nan"
+              }
+            ],
+            "href": "https://openeo-dev.vito.be/openeo/1.0/jobs/02a0b5d4-7bc4-436c-93f1-de5cb2126fa9/results/bW0%3D/e2f7140affbcf447b99b7312aa40fa7d/openEO.tif?expires=1631533501",
+            "roles": [
+              "data"
+            ],
+            "title": "openEO.tif",
+            "type": "image/tiff; application=geotiff; profile=cloud-optimized"
+          }
+        },
+        "bbox": [
+          7.532930374145508,
+          51.971557314220064,
+          7.620477676391602,
+          52.0055966608829
+        ],
+        "geometry": {
+          "coordinates": [
+            [
+              [
+                7.532930374145508,
+                51.971557314220064
+              ],
+              [
+                7.532930374145508,
+                52.0055966608829
+              ],
+              [
+                7.620477676391602,
+                52.0055966608829
+              ],
+              [
+                7.620477676391602,
+                51.971557314220064
+              ],
+              [
+                7.532930374145508,
+                51.971557314220064
+              ]
+            ]
+          ],
+          "type": "Polygon"
+        },
+        "id": "02a0b5d4-7bc4-436c-93f1-de5cb2126fa9",
+        "links": [
+          {
+            "href": "https://openeo-dev.vito.be/openeo/1.0/jobs/02a0b5d4-7bc4-436c-93f1-de5cb2126fa9/results",
+            "rel": "self",
+            "type": "application/json"
+          },
+          {
+            "href": "http://ceos.org/ard/files/PFS/SR/v5.0/CARD4L_Product_Family_Specification_Surface_Reflectance-v5.0.pdf",
+            "rel": "card4l-document",
+            "type": "application/pdf"
+          }
+        ],
+        "properties": {
+          "card4l:specification": "SR",
+          "card4l:specification_version": "5.0",
+          "created": "2021-09-06T11:33:41Z",
+          "datetime": null,
+          "end_datetime": "2019-03-05T00:00:00Z",
+          "instruments": [
+            "c-sar"
+          ],
+          "processing:facility": "VITO - SPARK",
+          "processing:software": "openeo-geotrellis-0.6.0a1",
+          "proj:epsg": 32632,
+          "start_datetime": "2019-03-01T00:00:00Z",
+          "title": "SAR pol smaller GTIFF overviews scaled",
+          "updated": "2021-09-06T11:35:04Z"
+        },
+        "stac_extensions": [
+          "processing",
+          "card4l-eo",
+          "https://stac-extensions.github.io/file/v1.0.0/schema.json",
+          "https://stac-extensions.github.io/raster/v1.0.0/schema.json",
+          "projection"
+        ],
+        "stac_version": "0.9.0",
+        "type": "Feature"
+      };
+
+      const lyr = await L.stacLayer(feature, {
+        debugLevel: 4,
+        resolution: 128,
+        useTileLayerAsFallback: true,
+        tileUrlTemplate: 'https://tiles.rdnt.io/tiles/{z}/{x}/{y}@2x?url={url}',
+        buildTileUrlTemplate: null
+      });
+      console.log("lyr.stac:", lyr.stac);
+      lyr.addTo(map);
+      map.fitBounds(lyr.getBounds());
+    </script>
+  </body>
+</html>
