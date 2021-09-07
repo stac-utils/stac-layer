@@ -173,7 +173,7 @@ const stacLayer = async (data, options = {}) => {
   const setFallback = (lyr, fallback) => {
     let count = 0;
     ["tileerror"].forEach(name => {
-      lyr.on(name, evt => {
+      lyr.on(name, async evt => {
         count++;
         // sometimes LeafletJS might issue multiple error events before
         // the layer is removed from the map
@@ -181,7 +181,14 @@ const stacLayer = async (data, options = {}) => {
         if (count === 1) {
           console.log(`[stac-layer] activating fallback because "${evt.error.message}"`);
           if (layerGroup.hasLayer(lyr)) layerGroup.removeLayer(lyr);
-          fallback();
+          await fallback();
+          onFallbackHandlers.forEach(handleOnFallback => {
+            try {
+              handleOnFallback({ error: evt });
+            } catch (error) {
+              console.error(error);
+            }
+          });
         }
       });
     });
@@ -189,9 +196,12 @@ const stacLayer = async (data, options = {}) => {
 
   // hijack on event to support on("click") as it isn't normally supported by layer groups
   const onClickHandlers = [];
+  const onFallbackHandlers = [];
   layerGroup.on = (name, callback) => {
     if (name === "click") {
       onClickHandlers.push(callback);
+    } else if (name === "fallback") {
+      onFallbackHandlers.push(callback);
     }
   };
 

@@ -134,7 +134,11 @@
         tileUrlTemplate: 'https://tiles.rdnt.io/tiles/{z}/{x}/{y}@2x?url={url}',
         buildTileUrlTemplate: null
       });
-      console.log("lyr.stac:", lyr.stac);
+      console.log("(initial) lyr.stac:", lyr.stac);
+      lyr.on("fallback", evt => {
+        console.log("fallback:", evt);
+        console.log("(after fallback) lyr.stac:", lyr.stac);
+      });
       lyr.addTo(map);
       map.fitBounds(lyr.getBounds());
     </script>

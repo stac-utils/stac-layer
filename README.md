@@ -88,7 +88,7 @@ when a composite of multiple assets are being visualized.
 ```js
 const featureCollection = ....; // a GeoJSON Feature Collection of STAC Features
 
-const layer = stacLayer(featureCollection);
+const layer = await stacLayer(featureCollection);
 layer.on("click", e => {
   const { type, data } = e.stac;
   // type is one of "Collection", "Feature", "Assets", or "Asset"
@@ -159,4 +159,18 @@ const layer = await stacLayer(data, options);
     }
   ]
 }
+```
+
+## listening to fallback events
+STAC Layer fires a custom "fallback" event when an error occurs rendering
+with GeoRasterLayer and it falls back to trying to use a tiler
+```js
+const layer = await stacLayer(data, options);
+layer.on("fallback", event => {
+  // event.error is the initial LeafletJS error event
+  // that triggered the fallback
+
+  // layer.stac metadata may change after fallback
+  // so good to check again now
+});
 ```
