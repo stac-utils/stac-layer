@@ -33,17 +33,17 @@ const findBand = (assets, bandName) => {
   }
 };
 
-const findVisualAsset = assets => {
+const findAsset = (assets, requiredRole) => {
   for (let key in assets) {
     const asset = assets[key];
-    if (key.toLowerCase() === "visual") {
+    if (key.toLowerCase() === requiredRole) {
       return { key, asset };
-    } else if (Array.isArray(asset.roles) && asset.roles.some(role => role.toLowerCase() === "visual")) {
+    } else if (Array.isArray(asset.roles) && asset.roles.find(role => role.toLowerCase() === requiredRole)) {
       return { key, asset };
     }
   }
 };
-const hasVisualAsset = assets => !!findVisualAsset(assets);
+const hasVisualAsset = assets => !!findAsset(assets, 'visual');
 
 const hasSeparatedRGB = assets => findBand(assets, "red") && findBand(assets, "green") && findBand(assets, "blue");
 
@@ -145,7 +145,7 @@ const stacLayer = async (data, options = {}) => {
   // remove trailing slash from titiler url
   if (options.titiler) options.titiler.replace(/\/$/, "");
 
-  const displayPreview = [true, false].includes(options.displayPreview) ? options.displayPreview : true;
+  const displayOverview = [true, false].includes(options.displayOverview) ? options.displayOverview : true;
 
   const useTileLayer = options.tileUrlTemplate || options.buildTileUrlTemplate;
   const preferTileLayer = useTileLayer && !options.useTileLayerAsFallback;
@@ -264,20 +264,6 @@ const stacLayer = async (data, options = {}) => {
     layerGroup.addLayer(lyr);
   } else if (dataType === DATA_TYPES.STAC_COLLECTION) {
     // STAC Collection
-    const preview = findLink(data, "preview");
-    if (debugLevel >= 1) console.log("[stac-layer] preview is ", preview);
-
-    if (displayPreview && preview && isImage(preview?.type)) {
-      const href = toAbsoluteHref(preview.href);
-      if (debugLevel >= 1) console.log("[stac-layer] href is " + href);
-      const bbox = getBoundingBox(data);
-      if (debugLevel >= 1) console.log("[stac-layer] bbox is " + bbox);
-      const latLngBounds = bboxToLatLngBounds(bbox);
-      const lyr = L.imageOverlay(href, latLngBounds);
-      bindDataToClickEvent(lyr);
-      layerGroup.addLayer(lyr);
-    }
-
     const bbox = data?.extent?.spatial?.bbox;
     if (isBoundingBox(bbox)) {
       const lyr = bboxLayer(bbox, options);
@@ -381,7 +367,7 @@ const stacLayer = async (data, options = {}) => {
     } else if (hasVisualAsset(assets) && isAssetCOG(assets.visual)) {
       if (debugLevel >= 1) console.log(`[stac-layer] found visual asset, so displaying that`);
       // default to using the visual asset
-      const { asset, key } = findVisualAsset(assets);
+      const { asset, key } = findAsset(assets, 'visual');
       const href = toAbsoluteHref(asset.href);
       const addTileLayer = () => {
         if (options.buildTileUrlTemplate) {
@@ -538,22 +524,25 @@ const stacLayer = async (data, options = {}) => {
       }
 
       if (!success) {
-        try {
-          const { thumbnail } = assets;
-          if (debugLevel >= 2) console.log("[stac-layer] thumbnail is ", thumbnail);
-          if (displayPreview && thumbnail && isImage(thumbnail?.type)) {
-            const href = toAbsoluteHref(thumbnail.href);
-            if (href.startsWith("s3://"))
-              console.log("[stac-layer] we have no way of visualizing thumbnails via S3 protocol");
-            const lyr = L.imageOverlay(href, bounds);
-            layerGroup.stac = { assets: [{ key: "thumbnail", asset: thumbnail }], bands: thumbnail?.["eo:bands"] };
-            // assume don't want to return only thumbnail information from click event,
-            // because it wouldn't be that useful
-            bindDataToClickEvent(lyr);
-            layerGroup.addLayer(lyr);
+        const overviewObject = findAsset(assets, 'overview');
+        if (displayOverview && overviewObject) {
+          if (debugLevel >= 2) console.log("[stac-layer] overview is ", overviewObject);
+          try {
+            const { asset } = overviewObject;
+            if (isImage(asset?.type)) {
+              const href = toAbsoluteHref(asset.href);
+              if (href.startsWith("s3://"))
+                console.log("[stac-layer] we have no way of visualizing overviews via S3 protocol");
+              const lyr = L.imageOverlay(href, bounds);
+              layerGroup.stac = { assets: [overviewObject], bands: asset["eo:bands"] };
+              // assume don't want to return only overview information from click event,
+              // because it wouldn't be that useful
+              bindDataToClickEvent(lyr);
+              layerGroup.addLayer(lyr);
+            }
+          } catch (error) {
+            console.error("[stac-layer] caught the following error while trying to visualize the overview asset", error);
           }
-        } catch (error) {
-          console.error("[stac-layer] caught the following error while trying to visualize the thumbnail asset", error);
         }
       }
     } else if (cogs.length >= 1) {

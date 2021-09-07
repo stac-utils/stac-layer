@@ -33,11 +33,8 @@
         const lyr = await L.stacLayer(item, {
           debugLevel: 2,
 
-          // should be able to toggle overview
-          displayOverview: true,
-
-          // works for thumbnail and preview
-          displayPreview: false
+          // works for assets with role overview
+          displayOverview: false
         });
 
         lyr.on('click', console.log);
