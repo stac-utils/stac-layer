@@ -82,20 +82,6 @@ const getLatLngBounds = item => {
 };
 
 function getDataType(data) {
-  // no longer used
-  // if (Array.isArray(data.links)) {
-  //   const href = findSelfHref(data);
-  //   // don't use new URL(href).pathname because
-  //   // sometimes href is relative and construction fails
-  //   if (typeof href === "string") {
-  //     if (href.match(/collections\/[^/]+\/items$/)) {
-  //       return DATA_TYPES.STAC_API_ITEMS;
-  //     }
-  //   }
-  // }
-
-  const hasLinks = Array.isArray(data.links);
-
   if (typeof data.type === "string") {
     const dataType = data.type.toUpperCase();
     if (dataType === "CATALOG") {
@@ -109,27 +95,18 @@ function getDataType(data) {
     }
   }
 
-  if (Array.isArray(data.assets)) {
-    return DATA_TYPES.STAC_ITEM;
-  }
-
-  if (hasLinks && ("bbox" in data || "extent" in data)) {
-    return DATA_TYPES.STAC_COLLECTION;
-  }
-
-  if (hasLinks) {
-    return DATA_TYPES.STAC_CATALOG;
-  }
-
-  if ("href" in data && "title" in data) {
+  if ("href" in data) {
     return DATA_TYPES.STAC_ASSET;
   }
-
-  if (Array.isArray(data) && data.every(it => "href" in it && "title" in it)) {
+  if (Array.isArray(data) && data.every(it => "href" in it)) {
     return DATA_TYPES.STAC_ASSETS;
   }
-
-  throw new Error("[stac-layer] couldn't determine type of the input data");
+  if ("license" in data && "extent" in data) {
+    return DATA_TYPES.STAC_COLLECTION;
+  }
+  else {
+    return DATA_TYPES.STAC_CATALOG;
+  }
 }
 
 // relevant links:

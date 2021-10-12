@@ -1,6 +1,8 @@
 # stac-layer
 > Visualize [STAC](https://stacspec.org/) Data on a [LeafletJS](https://leafletjs.com/) Map
 
+<img src="./stac-layer.gif" height=200>
+
 # install
 ```bash
 npm install stac-layer

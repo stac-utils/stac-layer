@@ -111,3 +111,6 @@ build/
 
 # Notes
 *.txt
+
+# other files
+.DS_Store
