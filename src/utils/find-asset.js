@@ -2,7 +2,7 @@
  * @name findAsset
  * @description finds the asset that matches the given role
  * @param {Object} assets
- * @param {String} requiredRole 
+ * @param {String} requiredRole
  * @returns {Object} asset
  */
 export default function findAsset(assets, requiredRole) {
@@ -14,4 +14,4 @@ export default function findAsset(assets, requiredRole) {
       return { key, asset };
     }
   }
-};
+}
