@@ -19,5 +19,3 @@ export default function withTimeout(ms, promiseOrFunction) {
       });
   });
 }
-
-await withTimeout(1000, () => {});
