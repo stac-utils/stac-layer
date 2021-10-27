@@ -1,5 +1,5 @@
 import getDepth from "get-depth";
-import isBoundingBox from "./is-bounding-box";
+import isBoundingBox from "./is-bounding-box.js";
 
 export default function getBoundingBox(item) {
   if (isBoundingBox(item.bbox)) {
