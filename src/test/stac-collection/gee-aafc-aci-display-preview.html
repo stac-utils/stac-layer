@@ -33,6 +33,7 @@
 
         const lyr = await L.stacLayer(collection, {
           debugLevel: 2,
+          displayPreview: true
         });
 
         lyr.on('click', console.log);

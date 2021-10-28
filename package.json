@@ -25,7 +25,7 @@
   "scripts": {
     "build": "webpack",
     "dev": "concurrently \"npx snowpack build --polyfill-node --watch\" \"cd build && npx http-server\"",
-    "format": "npx prettier --arrow-parens=avoid --print-width=120 --trailing-comma=none --write src/*.js",
+    "format": "npx prettier --arrow-parens=avoid --print-width=120 --trailing-comma=none --write src/*.js src/*/*.js",
     "serve": "HOST=0.0.0.0 http-server --cors",
     "test": "echo 'no automatic tests'",
     "tiler": "docker run --name titiler -p 8000:8000 --env PORT=8000 --rm -t developmentseed/titiler"
@@ -51,10 +51,12 @@
   "homepage": "https://github.com/DanielJDufour/stac-layer#readme",
   "dependencies": {
     "@babel/core": "^7.14.8",
+    "@mapbox/tilebelt": "^1.0.2",
     "@turf/boolean-point-in-polygon": "^6.5.0",
     "chroma-js": "^1.4.1",
     "dynamic-client": "^0.0.1",
-    "georaster": "^1.5.4",
+    "easy-image-loader": "^0.0.2",
+    "georaster": "^1.5.5",
     "georaster-layer-for-leaflet": "^3.2.0",
     "get-depth": "^0.0.1",
     "leaflet": "^1.7.1",

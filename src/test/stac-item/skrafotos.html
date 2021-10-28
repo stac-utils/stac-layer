@@ -27,19 +27,14 @@
       }).addTo(map);
 
 
-      const url_to_stac_collection = "https://earthengine-stac.storage.googleapis.com/catalog/AAFC_ACI.json";
+      const url_to_stac_items= "https://skraafotodistribution-stacfastapi.k8s-test-121.septima.dk/collections/2021skraafotos/items";
 
-      fetch(url_to_stac_collection).then(res => res.json()).then(async collection => {
-
-        const lyr = await L.stacLayer(collection, {
-          debugLevel: 2,
-        });
-
+      fetch(url_to_stac_items).then(res => res.json()).then(async featureCollection => {
+        const feature = featureCollection.features[0];
+        const lyr = await L.stacLayer(feature, { debugLevel: 2 });
         lyr.on('click', console.log);
-
         lyr.addTo(map);
-
-        map.fitBounds(lyr.getBounds());
+        map.fitBounds(lyr.getLayers()[0].getBounds());
       });
     </script>
   </body>

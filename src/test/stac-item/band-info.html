@@ -15,6 +15,7 @@
   </head>
   <body>
     <div id="map"></div>
+    <script src="https://unpkg.com/flug"></script>
     <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
     <script src="/index.js" type="module"></script>
     <script type="module">
@@ -31,6 +32,7 @@
 
       fetch(url_to_stac_item).then(res => res.json()).then(async feature => {
         const lyr = await L.stacLayer(feature, {
+          displayPreview: false,
           debugLevel: 4,
           tileUrlTemplate: "https://tiles.rdnt.io/tiles/{z}/{x}/{y}@2x?url={url}",
           useTileLayerAsFallback: true
@@ -38,6 +40,12 @@
         console.log("lyr.stac:", lyr.stac);
         lyr.addTo(map);
         map.fitBounds(lyr.getBounds());
+        lyr.on("click", console.log);
+
+        test("lyr.stac includes band info", ({ eq }) => {
+          eq(typeof lyr.stac, "object");
+          eq(lyr.stac.bands.map(band => band.common_name), ["red", "green", "blue"]);
+        });
       });
     </script>
   </body>
