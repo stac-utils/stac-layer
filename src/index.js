@@ -216,7 +216,7 @@ const stacLayer = async (data, options = {}) => {
   } else if (dataType === DATA_TYPES.STAC_ITEM || dataType === DATA_TYPES.STAC_COLLECTION) {
     let addedImagery = false;
 
-    const { assets } = data;
+    const { assets = {} } = data;
 
     const assetEntries = Object.entries(assets);
 
