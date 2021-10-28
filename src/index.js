@@ -96,7 +96,7 @@ const stacLayer = async (data, options = {}) => {
   if (debugLevel >= 2) console.log("[stac-layer] displayOverview:", displayOverview);
 
   const useTileLayer = options.tileUrlTemplate || options.buildTileUrlTemplate;
-  const preferTileLayer = useTileLayer && !options.useTileLayerAsFallback;
+  const preferTileLayer = (useTileLayer && !options.useTileLayerAsFallback) || false;
   if (debugLevel >= 2) console.log("[stac-layer] preferTileLayer:", preferTileLayer);
 
   // get link to self, which we might need later
@@ -213,50 +213,7 @@ const stacLayer = async (data, options = {}) => {
       return e?.layer?.feature;
     });
     layerGroup.addLayer(lyr);
-  } else if (dataType === DATA_TYPES.STAC_COLLECTION) {
-    if (displayPreview && hasLink(data, "preview")) {
-      try {
-        if (debugLevel >= 1) console.log(`[stac-layer] found image preview`);
-        const preview = findLink(data, "preview");
-        const { type } = preview;
-        const href = toAbsoluteHref(preview.href);
-
-        if (isImageType(type)) {
-          const bounds = getLatLngBounds(data);
-          if (debugLevel >= 1) console.log(`[stac-layer] item bounds are: ${bounds.toBBoxString()}`);
-
-          const previewLayer = await imageOverlay(href, bounds);
-          bindDataToClickEvent(previewLayer, data);
-          layerGroup.addLayer(previewLayer);
-          if (debugLevel >= 1) console.log("[stac-layer] succesfully added preview layer");
-        }
-      } catch (error) {
-        if (debugLevel >= 1)
-          console.log(`[stac-layer] caught the following error while trying to render the preview`, error);
-      }
-    }
-
-    const bbox = data?.extent?.spatial?.bbox;
-    if (isBoundingBox(bbox)) {
-      const lyr = bboxLayer(bbox, options);
-      bindDataToClickEvent(lyr);
-      layerGroup.addLayer(lyr);
-    } else if (Array.isArray(bbox) && bbox.length === 1 && isBoundingBox(bbox[0])) {
-      const lyr = bboxLayer(bbox[0], options);
-      bindDataToClickEvent(lyr);
-      layerGroup.addLayer(lyr);
-    } else if (Array.isArray(bbox) && bbox.length >= 2) {
-      const layers = bbox.slice(1).map(it => {
-        const lyr = bboxLayer(it, options);
-        // could we use turf to filter features by bounding box clicked
-        // or is that over-engineering?
-        bindDataToClickEvent(lyr);
-        return lyr;
-      });
-      const featureGroup = L.featureGroup(layers);
-      layerGroup.addLayer(featureGroup);
-    }
-  } else if (dataType === DATA_TYPES.STAC_ITEM) {
+  } else if (dataType === DATA_TYPES.STAC_ITEM || dataType === DATA_TYPES.STAC_COLLECTION) {
     let addedImagery = false;
 
     const { assets } = data;
@@ -490,20 +447,43 @@ const stacLayer = async (data, options = {}) => {
       }
     }
 
-    if ("geometry" in data && typeof data.geometry === "object") {
-      const lyr = L.geoJSON(data.geometry, {
-        fillOpacity: layerGroup.getLayers().length > 0 ? 0 : 0.2,
-        ...options
-      });
-      bindDataToClickEvent(lyr);
-      layerGroup.addLayer(lyr);
-    } else if ("bbox" in data && Array.isArray(data.bbox) && data.bbox.length === 4) {
-      const lyr = L.bboxLayer(data, {
-        fillOpacity: layerGroup.getLayers().length > 0 ? 0 : 0.2,
-        ...options
-      });
-      bindDataToClickEvent(lyr);
-      layerGroup.addLayer(lyr);
+    if (dataType === DATA_TYPES.STAC_ITEM) {
+      if ("geometry" in data && typeof data.geometry === "object") {
+        const lyr = L.geoJSON(data.geometry, {
+          fillOpacity: layerGroup.getLayers().length > 0 ? 0 : 0.2,
+          ...options
+        });
+        bindDataToClickEvent(lyr);
+        layerGroup.addLayer(lyr);
+      } else if ("bbox" in data && Array.isArray(data.bbox) && data.bbox.length === 4) {
+        const lyr = L.bboxLayer(data, {
+          fillOpacity: layerGroup.getLayers().length > 0 ? 0 : 0.2,
+          ...options
+        });
+        bindDataToClickEvent(lyr);
+        layerGroup.addLayer(lyr);
+      }
+    } else if (dataType === DATA_TYPES.STAC_COLLECTION) {
+      const bbox = data?.extent?.spatial?.bbox;
+      if (isBoundingBox(bbox)) {
+        const lyr = bboxLayer(bbox, options);
+        bindDataToClickEvent(lyr);
+        layerGroup.addLayer(lyr);
+      } else if (Array.isArray(bbox) && bbox.length === 1 && isBoundingBox(bbox[0])) {
+        const lyr = bboxLayer(bbox[0], options);
+        bindDataToClickEvent(lyr);
+        layerGroup.addLayer(lyr);
+      } else if (Array.isArray(bbox) && bbox.length >= 2) {
+        const layers = bbox.slice(1).map(it => {
+          const lyr = bboxLayer(it, options);
+          // could we use turf to filter features by bounding box clicked
+          // or is that over-engineering?
+          bindDataToClickEvent(lyr);
+          return lyr;
+        });
+        const featureGroup = L.featureGroup(layers);
+        layerGroup.addLayer(featureGroup);
+      }
     }
   } else if (dataType === DATA_TYPES.STAC_ASSET) {
     const { type } = data;
