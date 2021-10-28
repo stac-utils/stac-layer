@@ -1,6 +1,6 @@
 import bboxToLatLngBounds from "./bboxToLatLngBounds.js";
 
-export default function bboxLayer (bbox, options) {
+export default function bboxLayer(bbox, options) {
   const bounds = bboxToLatLngBounds(bbox);
-  return L.rectangle(bounds, options);          
+  return L.rectangle(bounds, options);
 }

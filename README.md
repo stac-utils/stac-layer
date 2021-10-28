@@ -27,6 +27,7 @@ const map = L.map('map');
 const layer = await stacLayer(
   data,
   {
+    displayOverview: true,
     displayPreview: false
   }
 );

@@ -114,3 +114,6 @@ build/
 
 # other files
 .DS_Store
+
+# lock files
+pnpm-lock.yaml

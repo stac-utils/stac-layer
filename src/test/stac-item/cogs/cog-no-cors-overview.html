@@ -2,7 +2,7 @@
 <html>
   <head>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.0.3/dist/leaflet.css"/>
     <style>
       #map {
         bottom: 0;
@@ -15,7 +15,7 @@
   </head>
   <body>
     <div id="map"></div>
-    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet@1.0.3/dist/leaflet.js"></script>
     <script src="/index.js" type="module"></script>
     <script type="module">
       // initalize leaflet map
@@ -27,20 +27,24 @@
       }).addTo(map);
 
 
-      const url_to_stac_item = "https://earthengine-stac.storage.googleapis.com/catalog/CIESIN_GPWv4_population-count.json";
+      const url_to_stac_item = "https://storage.googleapis.com/cfo-public/vegetation/California-Vegetation-CanopyBaseHeight-2016-Summer-00010m.json";
 
       fetch(url_to_stac_item).then(res => res.json()).then(async item => {
+
+        // inject JPG overview
+        item.assets.exampleOverview = {
+          href: window.location.href.split("/").slice(0, -1).join("/") + "/California-Vegetation-CanopyBaseHeight-2016-Summer-00010m.png",
+          type: "image/jpeg",
+          roles: ["overview"]
+        }
+
         const lyr = await L.stacLayer(item, {
-          debugLevel: 2,
-
-          // works for assets with role overview
-          displayPreview: true
+          debugLevel: 2
+          // don't need following because displayOverview is true by default
+          // displayOverview: true
         });
-
         lyr.on('click', console.log);
-
         lyr.addTo(map);
-
         map.fitBounds(lyr.getBounds());
       });
     </script>
