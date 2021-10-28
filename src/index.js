@@ -266,7 +266,6 @@ const stacLayer = async (data, options = {}) => {
     };
 
     // first, check for overview
-    debugger;
     if (displayOverview && hasAsset(assets, "overview")) {
       try {
         if (debugLevel >= 1) console.log(`[stac-layer] found image overview`);
