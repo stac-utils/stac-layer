@@ -23,7 +23,14 @@ module.exports = {
           loader: "babel-loader",
           options: {
             "presets": [
-              "@babel/preset-env"
+              [
+                "@babel/preset-env",
+                {
+                  "targets": {
+                    "ie": 11
+                  }
+                }
+              ]
             ],
             "plugins": [
               "@babel/plugin-proposal-nullish-coalescing-operator",

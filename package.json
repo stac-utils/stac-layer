@@ -57,6 +57,7 @@
   "homepage": "https://github.com/DanielJDufour/stac-layer#readme",
   "dependencies": {
     "@babel/core": "^7.14.8",
+    "@babel/polyfill": "^7.12.1",
     "@mapbox/tilebelt": "^1.0.2",
     "@turf/boolean-point-in-polygon": "^6.5.0",
     "chroma-js": "^1.4.1",
