@@ -358,7 +358,7 @@ const stacLayer = async (data, options = {}) => {
     }
 
     // check for non-standard asset with the key "visual"
-    if (addedImagery === false && hasAsset(assets, "visual")) {
+    if (addedImagery === false && displayOverview && hasAsset(assets, "visual")) {
       const { asset, key } = findAsset(assets, "visual");
       if (isAssetCOG(asset)) {
         if (debugLevel >= 1) console.log(`[stac-layer] found visual asset, so displaying that`);
