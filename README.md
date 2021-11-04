@@ -24,12 +24,14 @@ import stacLayer from 'stac-layer';
 // create your Leaflet map
 const map = L.map('map');
 
+// set options for the STAC layer
 const options = {
-  // See table below for supported options
+  // see table below for supported options, for example:
+  resolution: 128
 };
 
 // create layer
-const layer = await stacLayer(data,options);
+const layer = await stacLayer(data, options);
 
 // add layer to map
 layer.addTo(map);
@@ -40,25 +42,24 @@ map.fitBounds(layer.getBounds());
 
 The following options are supported:
 
-| **Option**                   | **Data Type** | **Default value**                          | **Description**                                                                                                                                                                                     |
-|------------------------------|---------------|--------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| baseUrl                      | string        | `href` of the `self` link in the STAC data | The base URL for relative links. Should be provided if the STAC data has no self link and links are not absolute. |
-| buildUrlTemplate             | function      | undefined                                  | For server-side rendering of imagery. See the chapter [using a tiler](#using-a-tiler) and [buildTileUrlTemplate](#buildTileUrlTemplate) for details. |
-| displayPreview               | boolean       | false                                      | Allow to display the asset with role `thumbnail` or the link with relation type `preview`. The previews are usually not covering the full extents and as such may be placed incorrectly on the map. |
-| displayOverview              | boolean       | true                                       | Allow to display the asset with role `overview` or `visual`. |
-| debugLevel                   | integer       | 0                                          | The higher the value the more debugging messages will be logged to the console. `0` to disable logging. |
-| latLngBounds / bounds / bbox | array<number> | undefined                                  | For STAC Assets only: The bounding box of the asset |
-| resolution                   | integer       | 32                                         | Adjust the display resolution, a power of two such as 32, 64, 128 or 256. By default the value is set to render quickly, but with limited resolution. Increase this value for better resolution, but slower rendering speed (e.g., 128). |
-| tileUrlTemplate              | string        | undefined                                  | For server-side rendering of imagery. See the chapter [using a tiler](#using-a-tiler) and [tileUrlTemplate](#tileUrlTemplate) for details. |
-| titiler                      | string        | undefined                                  | URL to a titiler instance that can be used to serve tiles instead of rendering the imagery client-side. |
-| useTileLayerAsFallback       | boolean       | false                                      | Enables server-side rendering of imagery in case an error has happened on the client-side. See the chapter [using a tiler](#using-a-tiler) and [useTileLayerAsFallback](#useTileLayerAsFallback) for details. |
+| **Option**                   | **Data Type** | **Default value**                          | **Description** |
+| ---------------------------- | ------------- | ------------------------------------------ |-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `baseUrl`                   | string        | `href` of the `self` link in the STAC data | The base URL for relative links. Should be provided if the STAC data has no self link and links are not absolute, or you pass a STAC Asset only. |
+| `buildUrlTemplate`           | function      | undefined                                  | For server-side rendering of imagery. See the chapter [using a tiler](#using-a-tiler) and [buildTileUrlTemplate](#buildTileUrlTemplate) for details. |
+| `displayPreview`             | boolean       | false                                      | Allow to display the asset with role `thumbnail` or the link with relation type `preview`. The previews are usually not covering the full extents and as such may be placed incorrectly on the map. |
+| `displayOverview`            | boolean       | true                                       | Allow to display the asset with role `overview` or `visual`. |
+| `debugLevel`                 | integer       | 0                                          | The higher the value the more debugging messages will be logged to the console. `0` to disable logging. |
+| 1. `latLngBounds`<br />2. `bounds`<br />3. `bbox` | 1. [latLngBounds](https://leafletjs.com/reference.html#latlngbounds)<br />2. [bounds](https://leafletjs.com/reference.html#bounds)<br />3. [West, South, East, North] | undefined                                  | Provide one of these options if the data is a STAC Assets only: The bounding box of the asset |
+| `resolution`                 | integer       | 32                                         | Adjust the display resolution, a power of two such as 32, 64, 128 or 256. By default the value is set to render quickly, but with limited resolution. Increase this value for better resolution, but slower rendering speed (e.g., 128). |
+| `tileUrlTemplate`            | string        | undefined                                  | For server-side rendering of imagery. See the chapter [using a tiler](#using-a-tiler) and [tileUrlTemplate](#tileUrlTemplate) for details. |
+| `useTileLayerAsFallback`     | boolean       | false                                      | Enables server-side rendering of imagery in case an error has happened on the client-side. See the chapter [using a tiler](#using-a-tiler) and [useTileLayerAsFallback](#useTileLayerAsFallback) for details. |
 
 ## using a tiler
-There's are a couple different ways to use a tiler to serve images of assets
+There's are a couple different ways to use a tiler to serve images of assets 
 that are Cloud-Optimized GeoTIFFs.
 
 ### tileUrlTemplate
-You can set tileUrlTemplate, which will be passed to Leaflet's [TileLayer](https://leafletjs.com/reference-1.7.1.html#tilelayer).  This will apply to whichever asset stac-layer chooses as the best GeoTIFF for visualization.
+You can set `tileUrlTemplate`, which will be passed to Leaflet's [TileLayer](https://leafletjs.com/reference-1.7.1.html#tilelayer). This will apply to whichever asset stac-layer chooses as the best GeoTIFF for visualization.
 ```js
 // a STAC Feature
 const layer = await stacLayer(data, {
@@ -66,9 +67,9 @@ const layer = await stacLayer(data, {
 });
 ```
 ### buildTileUrlTemplate
-If you need more dynamic customization, consider passing in a buildTileUrlTemplate function.
-You can use this function to change the tile url and its parameters depending on the 
+If you need more dynamic customization, consider passing in a `buildTileUrlTemplate` function. You can use this function to change the tile url and its parameters depending on the 
 type of asset.
+
 ```js
 const layer = await stacLayer(data, {
   buildTileUrlTemplate: ({
@@ -99,9 +100,7 @@ const layer = await stacLayer(data, {
 ```
 
 ## listening to click events
-STAC Layer added a "stac" property to Leaflet's onClick events that include the STAC information
-of what the user clicked.  It can be a STAC collection, feature, asset, or even an array of assets
-when a composite of multiple assets are being visualized.
+STAC Layer added a "stac" property to Leaflet's onClick events that include the STAC information of what the user clicked.  It can be a STAC collection, feature, asset, or even an array of assets when a composite of multiple assets are being visualized.
 ```js
 const featureCollection = ....; // a GeoJSON Feature Collection of STAC Features
 
