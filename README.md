@@ -17,20 +17,19 @@ npm install stac-layer
 - STAC Asset
 
 # usage
+
 ```js
 import stacLayer from 'stac-layer';
 
 // create your Leaflet map
 const map = L.map('map');
 
+const options = {
+  // See table below for supported options
+};
+
 // create layer
-const layer = await stacLayer(
-  data,
-  {
-    displayOverview: true,
-    displayPreview: false
-  }
-);
+const layer = await stacLayer(data,options);
 
 // add layer to map
 layer.addTo(map);
@@ -39,10 +38,25 @@ layer.addTo(map);
 map.fitBounds(layer.getBounds());
 ```
 
-# advanced usage
+The following options are supported:
+
+| **Option**                   | **Data Type** | **Default value**                          | **Description**                                                                                                                                                                                     |
+|------------------------------|---------------|--------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| baseUrl                      | string        | `href` of the `self` link in the STAC data | The base URL for relative links. Should be provided if the STAC data has no self link and links are not absolute. |
+| buildUrlTemplate             | function      | undefined                                  | For server-side rendering of imagery. See the chapter [using a tiler](#using-a-tiler) and [buildTileUrlTemplate](#buildTileUrlTemplate) for details. |
+| displayPreview               | boolean       | false                                      | Allow to display the asset with role `thumbnail` or the link with relation type `preview`. The previews are usually not covering the full extents and as such may be placed incorrectly on the map. |
+| displayOverview              | boolean       | true                                       | Allow to display the asset with role `overview` or `visual`. |
+| debugLevel                   | integer       | 0                                          | The higher the value the more debugging messages will be logged to the console. `0` to disable logging. |
+| latLngBounds / bounds / bbox | array<number> | undefined                                  | For STAC Assets only: The bounding box of the asset |
+| resolution                   | integer       | 32                                         | Adjust the display resolution, a power of two such as 32, 64, 128 or 256. By default the value is set to render quickly, but with limited resolution. Increase this value for better resolution, but slower rendering speed (e.g., 128). |
+| tileUrlTemplate              | string        | undefined                                  | For server-side rendering of imagery. See the chapter [using a tiler](#using-a-tiler) and [tileUrlTemplate](#tileUrlTemplate) for details. |
+| titiler                      | string        | undefined                                  | URL to a titiler instance that can be used to serve tiles instead of rendering the imagery client-side. |
+| useTileLayerAsFallback       | boolean       | false                                      | Enables server-side rendering of imagery in case an error has happened on the client-side. See the chapter [using a tiler](#using-a-tiler) and [useTileLayerAsFallback](#useTileLayerAsFallback) for details. |
+
 ## using a tiler
 There's are a couple different ways to use a tiler to serve images of assets
 that are Cloud-Optimized GeoTIFFs.
+
 ### tileUrlTemplate
 You can set tileUrlTemplate, which will be passed to Leaflet's [TileLayer](https://leafletjs.com/reference-1.7.1.html#tilelayer).  This will apply to whichever asset stac-layer chooses as the best GeoTIFF for visualization.
 ```js
