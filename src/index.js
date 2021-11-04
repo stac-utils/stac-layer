@@ -87,10 +87,6 @@ const stacLayer = async (data, options = {}) => {
   if (debugLevel >= 2) console.log("[stac-layer] data:", data);
   if (debugLevel >= 2) console.log("[stac-layer] options:", options);
 
-  // preprocessing
-  // remove trailing slash from titiler url
-  if (options.titiler) options.titiler.replace(/\/$/, "");
-
   const displayPreview = [true, false].includes(options.displayPreview) ? options.displayPreview : false;
   if (debugLevel >= 2) console.log("[stac-layer] displayPreview:", displayPreview);
 
