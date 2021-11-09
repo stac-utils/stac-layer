@@ -271,6 +271,7 @@ const stacLayer = async (data, options = {}) => {
         const { key, asset } = getOverviewAsset(assets);
         const { type } = asset;
         const href = toAbsoluteHref(asset.href);
+        if (debugLevel >= 2) console.log("[stac-layer] overview's href is:", href);
 
         if (isImageType(type)) {
           const overviewLayer = await imageOverlay(href, bounds);
@@ -282,8 +283,6 @@ const stacLayer = async (data, options = {}) => {
           addedImagery = true;
           if (debugLevel >= 1) console.log("[stac-layer] succesfully added overview layer");
         } else if (isAssetCOG(asset)) {
-          if (debugLevel >= 2) console.log("[stac-layer] overview's href is:", href);
-
           if (preferTileLayer) {
             await addTileLayer({ asset, href, isCOG: true, isVisual: true, key });
           }
