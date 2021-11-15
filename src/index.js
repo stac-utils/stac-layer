@@ -101,7 +101,7 @@ const stacLayer = async (data, options = {}) => {
   const selfHref = findSelfHref(data);
   if (debugLevel >= 2) console.log("[stac-layer] self href:", selfHref);
 
-  const baseUrl = options.baseUrl || selfHref?.substring(0, selfHref.lastIndexOf("/") + 1);
+  let baseUrl = options.baseUrl || selfHref?.substring(0, selfHref.lastIndexOf("/") + 1);
   // add a / to the end of the base url to make sure toAbsolute works later on
   if (baseUrl && !baseUrl.endsWith("/")) baseUrl += "/";
   if (debugLevel >= 2) console.log("[stac-layer] base url:", baseUrl);
