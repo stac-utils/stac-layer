@@ -58,6 +58,8 @@ The following options are supported:
 There's are a couple different ways to use a tiler to serve images of assets 
 that are Cloud-Optimized GeoTIFFs.
 
+**Note:** To enforce using server-side rendering of imagery `useTileLayerAsFallback` must be set to `false` and either `tileUrlTemplate` or `buildTileUrlTemplate` must be given.
+
 ### tileUrlTemplate
 You can set `tileUrlTemplate`, which will be passed to Leaflet's [TileLayer](https://leafletjs.com/reference-1.7.1.html#tilelayer). This will apply to whichever asset stac-layer chooses as the best GeoTIFF for visualization.
 ```js
@@ -66,6 +68,7 @@ const layer = await stacLayer(data, {
   tileUrlTemplate: "https://tiles.rdnt.io/tiles/{z}/{x}/{y}@2x?url={url}"
 });
 ```
+
 ### buildTileUrlTemplate
 If you need more dynamic customization, consider passing in a `buildTileUrlTemplate` function. You can use this function to change the tile url and its parameters depending on the 
 type of asset.
@@ -90,8 +93,10 @@ const layer = await stacLayer(data, {
   }
 });
 ```
+
 ### useTileLayerAsFallback
 If you'd like to only use a tiler if [GeoRasterLayer](https://github.com/geotiff/georaster-layer-for-leaflet) fails, set `useTileLayerAsFallback` to `true`.
+
 ```js
 const layer = await stacLayer(data, {
   tileUrlTemplate: "https://tiles.rdnt.io/tiles/{z}/{x}/{y}@2x?url={url}",
