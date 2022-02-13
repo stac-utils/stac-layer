@@ -44,8 +44,8 @@ The following options are supported:
 
 | **Option**                   | **Data Type** | **Default value**                          | **Description** |
 | ---------------------------- | ------------- | ------------------------------------------ |-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `baseUrl`                   | string        | `href` of the `self` link in the STAC data | The base URL for relative links. Should be provided if the STAC data has no self link and links are not absolute, or you pass a STAC Asset only. |
-| `buildUrlTemplate`           | function      | undefined                                  | For server-side rendering of imagery. See the chapter [using a tiler](#using-a-tiler) and [buildTileUrlTemplate](#buildTileUrlTemplate) for details. |
+| `baseUrl`                    | string        | `href` of the `self` link in the STAC data | The base URL for relative links. Should be provided if the STAC data has no self link and links are not absolute, or you pass a STAC Asset only. |
+| `buildTileUrlTemplate`       | function      | undefined                                  | For server-side rendering of imagery. See the chapter [using a tiler](#using-a-tiler) and [buildTileUrlTemplate](#buildTileUrlTemplate) for details. |
 | `displayPreview`             | boolean       | false                                      | Allow to display the asset with role `thumbnail` or the link with relation type `preview`. The previews are usually not covering the full extents and as such may be placed incorrectly on the map. |
 | `displayOverview`            | boolean       | true                                       | Allow to display the asset with role `overview` or `visual`. |
 | `debugLevel`                 | integer       | 0                                          | The higher the value the more debugging messages will be logged to the console. `0` to disable logging. |
