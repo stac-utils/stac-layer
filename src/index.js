@@ -274,7 +274,7 @@ const stacLayer = async (data, options = {}) => {
         if (debugLevel >= 2) console.log("[stac-layer] overview's href is:", href);
 
         if (isImageType(type)) {
-          const overviewLayer = await imageOverlay(href, bounds);
+          const overviewLayer = await imageOverlay(href, bounds, options.crossOrigin);
           bindDataToClickEvent(overviewLayer, asset);
           // there probably aren't eo:bands attached to an overview
           // but we include this here just in case
@@ -319,7 +319,7 @@ const stacLayer = async (data, options = {}) => {
         const href = toAbsoluteHref(asset.href);
 
         if (isImageType(type)) {
-          const thumbLayer = await imageOverlay(href, bounds);
+          const thumbLayer = await imageOverlay(href, bounds, options.crossOrigin);
           bindDataToClickEvent(thumbLayer, data);
           layerGroup.addLayer(thumbLayer);
           addedImagery = true;
@@ -340,7 +340,7 @@ const stacLayer = async (data, options = {}) => {
         const href = toAbsoluteHref(preview.href);
 
         if (isImageType(type)) {
-          const previewLayer = await imageOverlay(href, bounds);
+          const previewLayer = await imageOverlay(href, bounds, options.crossOrigin);
           bindDataToClickEvent(previewLayer, data);
           layerGroup.addLayer(previewLayer);
           addedImagery = true;
@@ -502,7 +502,7 @@ const stacLayer = async (data, options = {}) => {
         );
       }
 
-      const lyr = await imageOverlay(href, bounds);
+      const lyr = await imageOverlay(href, bounds, options.crossOrigin);
       bindDataToClickEvent(lyr);
       layerGroup.addLayer(lyr);
       fillOpacity = 0;
