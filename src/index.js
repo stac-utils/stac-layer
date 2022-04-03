@@ -24,7 +24,7 @@ import createGeoRasterLayer from "./utils/create-georaster-layer.js";
 const isJPG = type => !!type.match(/^image\/jpe?g/i);
 const isPNG = type => !!type.match(/^image\/png/i);
 const isImageType = type => isJPG(type) || isPNG(type);
-const isAssetCOG = asset => MIME_TYPES.COG.includes(asset.type);
+const isAssetCOG = asset => MIME_TYPES.COG.includes(asset.type) && typeof asset.href === 'string' && asset.href.length > 0;
 
 const getOverviewAsset = assets => findAsset(assets, "overview");
 const hasAsset = (assets, key) => !!findAsset(assets, key);
@@ -416,10 +416,10 @@ const stacLayer = async (data, options = {}) => {
 
     // if we still haven't found a valid imagery layer yet, just add the first COG
     if (!addedImagery && cogs.length >= 1) {
-      if (debugLevel >= 1) console.log(`[stac-layer] defaulting to trying to display the first COG asset"`);
+      if (debugLevel >= 1) console.log(`[stac-layer] defaulting to trying to display the first COG asset`);
       const asset = cogs[0];
       const key = assetEntries.find(([key, value]) => value === asset)[0];
-      const href = toAbsoluteHref(asset?.href);
+      const href = toAbsoluteHref(asset.href);
 
       if (preferTileLayer) {
         await addTileLayer({ asset, href, isCOG: true, isVisual: false, key });
