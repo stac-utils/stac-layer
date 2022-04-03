@@ -5,6 +5,7 @@ import parseGeoRaster from "georaster";
 import GeoRasterLayer from "georaster-layer-for-leaflet";
 import reprojectBoundingBox from "reproject-bbox";
 import booleanPointInPolygon from "@turf/boolean-point-in-polygon";
+import URI from "urijs";
 
 import bboxToLatLngBounds from "./utils/bboxToLatLngBounds.js";
 import bboxLayer from "./utils/bboxLayer.js";
@@ -13,8 +14,6 @@ import imageOverlay from "./utils/image-overlay.js";
 import tileLayer from "./utils/tile-layer.js";
 import isBoundingBox from "./utils/is-bounding-box.js";
 import getBoundingBox from "./utils/get-bounding-box.js";
-import toAbsolute from "./utils/to-absolute.js";
-import isRelative from "./utils/is-relative.js";
 import { DATA_TYPES, EVENT_DATA_TYPES, MIME_TYPES } from "./data.js";
 import createGeoRasterLayer from "./utils/create-georaster-layer.js";
 
@@ -101,19 +100,24 @@ const stacLayer = async (data, options = {}) => {
   const selfHref = findSelfHref(data);
   if (debugLevel >= 2) console.log("[stac-layer] self href:", selfHref);
 
-  let baseUrl = options.baseUrl || selfHref?.substring(0, selfHref.lastIndexOf("/") + 1);
-  // add a / to the end of the base url to make sure toAbsolute works later on
-  if (baseUrl && !baseUrl.endsWith("/")) baseUrl += "/";
+  let baseUrl = options.baseUrl || selfHref;
   if (debugLevel >= 2) console.log("[stac-layer] base url:", baseUrl);
 
   // default to filling in the bounds layer unless we successfully visualize an image
   let fillOpacity = 0.2;
 
   const toAbsoluteHref = href => {
-    if (!href) throw new Error("[stac-layer] can't convert nothing to an absolute href");
-    if (!isRelative(href)) return href;
-    if (!baseUrl) throw new Error(`[stact-layer] can't determine an absolute url for "${href}" without a baseUrl`);
-    return toAbsolute(href, baseUrl);
+    if (!href) {
+      throw new Error("[stac-layer] can't convert nothing to an absolute href");
+    }
+    let uri = URI(href);
+    if (uri.is("relative")) {
+      if (!baseUrl) {
+        throw new Error(`[stact-layer] can't determine an absolute url for "${href}" without a baseUrl`);
+      }
+      uri = uri.absoluteTo(baseUrl);
+    }
+    return uri.toString();
   };
 
   const layerGroup = L.layerGroup();
