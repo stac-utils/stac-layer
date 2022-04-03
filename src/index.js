@@ -220,16 +220,6 @@ const stacLayer = async (data, options = {}) => {
 
     const { assets = {} } = data;
 
-    const assetEntries = Object.entries(assets);
-
-    const assetKeys = Object.keys(assets);
-
-    const assetValues = Object.values(assets);
-
-    const assetCount = assetKeys.length;
-
-    const cogs = assetValues.filter(isAssetCOG);
-
     const bounds = getLatLngBounds(data);
     if (debugLevel >= 1) console.log(`[stac-layer] item bounds are: ${bounds.toBBoxString()}`);
 
@@ -389,40 +379,11 @@ const stacLayer = async (data, options = {}) => {
       }
     }
 
-    // check if there's only one asset and it's a COG
-    if (addedImagery === false && assetCount === 1 && isAssetCOG(assets[assetKeys[0]])) {
-      if (debugLevel >= 1) console.log(`[stac-layer] there is only one asset and it is a Cloud-Optimized GeoTIFF`);
-      const key = assetKeys[0];
-      const asset = assets[key];
-      const href = toAbsoluteHref(asset?.href);
-      if (debugLevel >= 2) console.log("[stac-layer] asset's href is:", href);
-      if (preferTileLayer) {
-        await addTileLayer({ asset, href, isCOG: true, isVisual: null, key });
-      }
-
-      if (addedImagery === false) {
-        try {
-          const georasterLayer = await createGeoRasterLayer(href, options);
-          bindDataToClickEvent(georasterLayer, asset);
-          layerGroup.stac = { assets: [{ key, asset }], bands: asset?.["eo:bands"] };
-          setFallback(georasterLayer, () => addTileLayer({ asset, href, isCOG: true, isVisual: null, key }));
-          layerGroup.addLayer(georasterLayer);
-          addedImagery = true;
-        } catch (error) {
-          console.error("[stac-layer] failed to create georaster layer because of the following error:", error);
-        }
-      }
-
-      if (addedImagery === false && !preferTileLayer && useTileLayer) {
-        await addTileLayer({ asset, href, isCOG: true, isVisual: null, key });
-      }
-    }
-
     // if we still haven't found a valid imagery layer yet, just add the first COG
+    const cogs = Object.entries(assets).filter(entry => isAssetCOG(entry[1]));
     if (!addedImagery && cogs.length >= 1) {
       if (debugLevel >= 1) console.log(`[stac-layer] defaulting to trying to display the first COG asset`);
-      const asset = cogs[0];
-      const key = assetEntries.find(([key, value]) => value === asset)[0];
+      const [key, asset] = cogs[0];
       const href = toAbsoluteHref(asset.href);
 
       if (preferTileLayer) {
