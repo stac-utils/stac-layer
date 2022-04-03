@@ -32,7 +32,7 @@
     "build": "webpack",
     "dev": "concurrently \"npx snowpack build --polyfill-node --watch\" \"cd build && npx http-server\"",
     "format": "npx prettier --arrow-parens=avoid --print-width=120 --trailing-comma=none --write src/*.js src/*/*.js",
-    "serve": "HOST=0.0.0.0 http-server --cors",
+    "serve": "http-server --cors",
     "test": "echo 'no automatic tests'",
     "tiler": "docker run --name titiler -p 8000:8000 --env PORT=8000 --rm -t developmentseed/titiler"
   },
