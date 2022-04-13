@@ -77,6 +77,29 @@ function getDataType(data) {
   }
 }
 
+function addOverviewAssetForFeature (feature, layerGroup, errorCallback) {
+  const { asset } = getOverviewAsset(feature.assets);
+  if (isImageType(asset.type)) {
+    const lyr = L.imageOverlay(asset.href, [[feature.bbox[1], feature.bbox[0]], [feature.bbox[3], feature.bbox[2]]])
+    layerGroup.addLayer(lyr)
+    lyr.on('error', () => {
+      layerGroup.removeLayer(lyr)
+      errorCallback()
+    })
+  }
+}
+
+function addThumbnailAssetForFeature (feature, layerGroup, errorCallback) {
+  const { asset } = getAsset(feature.assets, 'thumbnail');
+  if (isImageType(asset.type)) { 
+    const lyr = L.imageOverlay(asset.href, [[feature.bbox[1], feature.bbox[0]], [feature.bbox[3], feature.bbox[2]]])
+    layerGroup.addLayer(lyr)
+    lyr.on('error', () => {
+      layerGroup.removeLayer(lyr)
+      errorCallback()
+    })
+}
+
 // relevant links:
 // https://github.com/radiantearth/stac-browser/blob/v3/src/stac.js
 const stacLayer = async (data, options = {}) => {
@@ -199,10 +222,15 @@ const stacLayer = async (data, options = {}) => {
     const lyr = L.geoJSON(data, options);
 
     data.features.forEach(f => {
-      if (displayPreview && hasAsset(f.assets, "thumbnail") && isImageType(f.assets.thumbnail.type)) { 
-        const lyr = L.imageOverlay(f.assets.thumbnail.href, [[f.bbox[1], f.bbox[0]], [f.bbox[3], f.bbox[2]]])
-        layerGroup.addLayer(lyr)
+
+      if (displayPreview) {
+        if (hasAsset(f.assets, "thumbnail")) { 
+          addThumbnailAssetForFeature(f, layerGroup, addOverviewAssetForFeature(f, layerGroup))
+        } else if (!hasAsset(f.assets, "thumbnail") && hasAsset(f.assets, "overview")) {
+          addOverviewAssetForFeature(f, layerGroup)
       }
+    }
+
     })
     bindDataToClickEvent(lyr, e => {
       try {
