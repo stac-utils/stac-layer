@@ -197,6 +197,13 @@ const stacLayer = async (data, options = {}) => {
     // Item Collection aka GeoJSON Feature Collection where each Feature is a STAC Item
     // STAC API /items endpoint also returns a similar Feature Collection
     const lyr = L.geoJSON(data, options);
+
+    data.features.forEach(f => {
+      if (displayPreview && hasAsset(f.assets, "thumbnail") && isImageType(f.assets.thumbnail.type)) { 
+        const lyr = L.imageOverlay(f.assets.thumbnail.href, [[f.bbox[1], f.bbox[0]], [f.bbox[3], f.bbox[2]]])
+        layerGroup.addLayer(lyr)
+      }
+    })
     bindDataToClickEvent(lyr, e => {
       try {
         const { lat, lng } = e.latlng;
