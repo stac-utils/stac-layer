@@ -90,7 +90,7 @@ function addOverviewAssetForFeature (feature, layerGroup, errorCallback) {
 }
 
 function addThumbnailAssetForFeature (feature, layerGroup, errorCallback) {
-  const { asset } = getAsset(feature.assets, 'thumbnail');
+  const { asset } = findAsset(feature.assets, 'thumbnail');
   if (isImageType(asset.type)) { 
     const lyr = L.imageOverlay(asset.href, [[feature.bbox[1], feature.bbox[0]], [feature.bbox[3], feature.bbox[2]]])
     layerGroup.addLayer(lyr)
@@ -98,6 +98,7 @@ function addThumbnailAssetForFeature (feature, layerGroup, errorCallback) {
       layerGroup.removeLayer(lyr)
       errorCallback()
     })
+  }
 }
 
 // relevant links:
