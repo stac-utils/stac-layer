@@ -224,10 +224,17 @@ const stacLayer = async (data, options = {}) => {
     data.features.forEach(f => {
 
       if (displayPreview) {
+        // If we've got a thumnail asset add it
         if (hasAsset(f.assets, "thumbnail")) { 
-          addThumbnailAssetForFeature(f, layerGroup, addOverviewAssetForFeature(f, layerGroup))
+          addThumbnailAssetForFeature(f, layerGroup, () => {
+            // If some reason it's broken try for an overview asset
+            if (hasAsset(f.assets, "overview")) {
+              addOverviewAssetForFeature(f, layerGroup)
+            }
+          })
         } else if (!hasAsset(f.assets, "thumbnail") && hasAsset(f.assets, "overview")) {
-          addOverviewAssetForFeature(f, layerGroup)
+            // If we don't have a thumbail let's try for an overview asset
+            addOverviewAssetForFeature(f, layerGroup)
       }
     }
 
