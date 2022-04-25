@@ -8,7 +8,13 @@ import loadImage from "easy-image-loader";
 // (3) rejects the promise if it takes more than 5 seconds for the image to load
 export default async function imageOverlay(url, bounds, crossOrigin, options) {
   const timeout = 5 * 1000; // 5 seconds
-  const img = await loadImage(url, { crossOrigin, timeout });
+  let img = null
+  try {
+    img = await loadImage(url, { crossOrigin, timeout });
+  }
+  catch {
+    return null
+  }
   const lyr = L.imageOverlay(img, bounds, options);
   return lyr;
 }
