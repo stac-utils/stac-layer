@@ -82,13 +82,13 @@ async function addOverviewAssetForFeature (feature, layerGroup, crossOrigin, err
   if (isImageType(asset.type)) {
     const lyr = await imageOverlay(asset.href, [[feature.bbox[1], feature.bbox[0]], [feature.bbox[3], feature.bbox[2]]], crossOrigin);
     if (lyr === null) {
-      errorCallback()
+      if (errorCallback) errorCallback()
       return
     }
     layerGroup.addLayer(lyr)
     lyr.on('error', () => {
       layerGroup.removeLayer(lyr)
-      errorCallback()
+      if (errorCallback) errorCallback()
     })
   }
 }
@@ -98,13 +98,13 @@ async function addThumbnailAssetForFeature (feature, layerGroup, crossOrigin, er
   if (isImageType(asset.type)) { 
     const lyr = await imageOverlay(asset.href, [[feature.bbox[1], feature.bbox[0]], [feature.bbox[3], feature.bbox[2]]], crossOrigin);
     if (lyr === null) {
-      errorCallback()
+      if (errorCallback) errorCallback()
       return
     }
     layerGroup.addLayer(lyr)
     lyr.on('error', () => {
       layerGroup.removeLayer(lyr)
-      errorCallback()
+      if (errorCallback) errorCallback()
     })
   }
 }
