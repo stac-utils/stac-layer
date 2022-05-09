@@ -4,15 +4,31 @@
   "description": "Visualize a STAC Item or Collection on a Leaflet Map",
   "type": "module",
   "main": "src/index.js",
-  "unpkg": "dist/stac-layer.min.js",
+  "browser": "dist/stac-layer.min.js",
   "module": "src/index.js",
   "exports": "./src/index.js",
   "directories": {
     "test": "test"
   },
   "files": [
-    "src",
-    "dist"
+    "src/index.js",
+    "src/data.js",
+    "src/utils/bboxLayer.js",
+    "src/utils/bboxToLatLngBounds.js",
+    "src/utils/create-georaster-layer.js",
+    "src/utils/find-asset.js",
+    "src/utils/get-bounding-box.js",
+    "src/utils/image-overlay.js",
+    "src/utils/is-bounding-box.js",
+    "src/utils/is-relative.js",
+    "src/utils/pick.js",
+    "src/utils/tile-layer.js",
+    "src/utils/titiler.js",
+    "src/utils/titiler-layer.js",
+    "src/utils/to-absolute.js",
+    "src/utils/with-timeout.js",
+    "dist/stac-layer.min.js",
+    "dist/stac-layer.min.js.map"
   ],
   "scripts": {
     "build": "webpack",
@@ -66,6 +82,6 @@
     "http-server": "^14.1.0",
     "snowpack": "^3.7.1",
     "webpack": "^5.42.0",
-    "webpack-cli": "^4.7.2"
+    "webpack-cli": "^4.9.2"
   }
 }
