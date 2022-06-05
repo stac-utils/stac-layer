@@ -23,7 +23,8 @@ import createGeoRasterLayer from "./utils/create-georaster-layer.js";
 const isJPG = type => !!type.match(/^image\/jpe?g/i);
 const isPNG = type => !!type.match(/^image\/png/i);
 const isImageType = type => isJPG(type) || isPNG(type);
-const isAssetCOG = asset => MIME_TYPES.COG.includes(asset.type) && typeof asset.href === 'string' && asset.href.length > 0;
+const isAssetCOG = asset =>
+  MIME_TYPES.COG.includes(asset.type) && typeof asset.href === "string" && asset.href.length > 0;
 
 const getOverviewAsset = assets => findAsset(assets, "overview");
 const hasAsset = (assets, key) => !!findAsset(assets, key);
