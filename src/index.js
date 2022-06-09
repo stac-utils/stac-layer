@@ -148,11 +148,16 @@ const stacLayer = async (data, options = {}) => {
   // hijack on event to support on("click") as it isn't normally supported by layer groups
   const onClickHandlers = [];
   const onFallbackHandlers = [];
-  layerGroup.on = (name, callback) => {
+  layerGroup.on2 = layerGroup.on;
+  layerGroup.on = function (name, callback) {
     if (name === "click") {
       onClickHandlers.push(callback);
+      return this;
     } else if (name === "fallback") {
       onFallbackHandlers.push(callback);
+      return this;
+    } else {
+      return this.on2(...arguments);
     }
   };
 
