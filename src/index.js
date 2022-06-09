@@ -1,5 +1,3 @@
-import "@babel/polyfill";
-
 import L from "leaflet";
 import parseGeoRaster from "georaster";
 import GeoRasterLayer from "georaster-layer-for-leaflet";
@@ -21,9 +19,8 @@ import createGeoRasterLayer from "./utils/create-georaster-layer.js";
 // utility functions
 // get asset extension, if type and if missing type or maybe throw an error
 // that item is missing a type
-const isJPG = type => !!type.match(/^image\/jpe?g/i);
-const isPNG = type => !!type.match(/^image\/png/i);
-const isImageType = type => isJPG(type) || isPNG(type);
+
+const isImageType = type => MIME_TYPES.BROWSER.includes(type);
 const isAssetCOG = asset =>
   MIME_TYPES.COG.includes(asset.type) && typeof asset.href === "string" && asset.href.length > 0;
 
@@ -152,11 +149,16 @@ const stacLayer = async (data, options = {}) => {
   // hijack on event to support on("click") as it isn't normally supported by layer groups
   const onClickHandlers = [];
   const onFallbackHandlers = [];
-  layerGroup.on = (name, callback) => {
+  layerGroup.on2 = layerGroup.on;
+  layerGroup.on = function (name, callback) {
     if (name === "click") {
       onClickHandlers.push(callback);
+      return this;
     } else if (name === "fallback") {
       onFallbackHandlers.push(callback);
+      return this;
+    } else {
+      return this.on2(...arguments);
     }
   };
 

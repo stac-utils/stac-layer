@@ -1,13 +1,17 @@
 {
   "name": "stac-layer",
-  "version": "0.10.1",
+  "version": "0.12.0",
   "description": "Visualize a STAC Item or Collection on a Leaflet Map",
-  "main": "dist/stac-layer.min.js",
-  "module": "dist/stac-layer.min.js",
+  "type": "module",
+  "main": "src/index.js",
+  "browser": "dist/stac-layer.min.js",
+  "module": "src/index.js",
+  "exports": "./src/index.js",
   "directories": {
     "test": "test"
   },
   "files": [
+    "babel.config.json",
     "src/index.js",
     "src/data.js",
     "src/utils/bboxLayer.js",
@@ -27,7 +31,6 @@
     "dist/stac-layer.min.js",
     "dist/stac-layer.min.js.map"
   ],
-  "type": "module",
   "scripts": {
     "build": "webpack",
     "dev": "concurrently \"npx snowpack build --polyfill-node --watch\" \"cd build && npx http-server\"",
@@ -56,8 +59,6 @@
   },
   "homepage": "https://github.com/DanielJDufour/stac-layer#readme",
   "dependencies": {
-    "@babel/core": "^7.14.8",
-    "@babel/polyfill": "^7.12.1",
     "@mapbox/tilebelt": "^1.0.2",
     "@turf/bbox-polygon": "^6.5.0",
     "@turf/boolean-point-in-polygon": "^6.5.0",
@@ -67,20 +68,27 @@
     "georaster": "^1.5.5",
     "georaster-layer-for-leaflet": "^3.7.1",
     "get-depth": "^0.0.1",
-    "leaflet": "1.7.1",
+    "leaflet": "^1.8.0",
     "reproject-geojson": "^0.2.0",
     "urijs": "^1.19.11"
   },
   "devDependencies": {
+    "@babel/cli": "^7.17.10",
+    "@babel/core": "^7.18.2",
     "@babel/plugin-proposal-nullish-coalescing-operator": "^7.14.5",
     "@babel/plugin-proposal-optional-chaining": "^7.14.5",
-    "@babel/preset-env": "^7.15.4",
+    "@babel/preset-env": "^7.18.2",
     "babel-loader": "^8.2.2",
     "concurrently": "^6.2.0",
     "eslint-config-prettier": "^8.3.0",
     "http-server": "^14.1.0",
     "snowpack": "^3.7.1",
     "webpack": "^5.42.0",
-    "webpack-cli": "^4.7.2"
-  }
+    "webpack-cli": "^4.9.2"
+  },
+  "browserslist": [
+    "> 1%",
+    "last 2 versions",
+    "not dead"
+  ]
 }
