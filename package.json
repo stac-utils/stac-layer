@@ -1,6 +1,6 @@
 {
   "name": "stac-layer",
-  "version": "0.10.1",
+  "version": "0.11.0",
   "description": "Visualize a STAC Item or Collection on a Leaflet Map",
   "type": "module",
   "main": "src/index.js",
