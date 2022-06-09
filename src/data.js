@@ -20,8 +20,9 @@ export const MIME_TYPES = {
   COG: ["image/tiff; application=geotiff; profile=cloud-optimized", "image/vnd.stac.geotiff; cloud-optimized=true"],
   GEOTIFF: [
     "application/geotiff",
-    "image/tiff; application=geotiff;",
+    "image/tiff; application=geotiff",
     "image/tiff; application=geotiff; profile=cloud-optimized",
+    "image/vnd.stac.geotiff",
     "image/vnd.stac.geotiff; cloud-optimized=true"
   ],
   JPG: ["image/jpeg", "image/jpg"],
