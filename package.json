@@ -60,6 +60,7 @@
   "homepage": "https://github.com/DanielJDufour/stac-layer#readme",
   "dependencies": {
     "@mapbox/tilebelt": "^1.0.2",
+    "@turf/bbox-polygon": "^6.5.0",
     "@turf/boolean-point-in-polygon": "^6.5.0",
     "chroma-js": "^1.4.1",
     "dynamic-client": "^0.0.1",
@@ -68,7 +69,7 @@
     "georaster-layer-for-leaflet": "^3.7.1",
     "get-depth": "^0.0.1",
     "leaflet": "^1.8.0",
-    "reproject-bbox": "^0.0.3",
+    "reproject-geojson": "^0.2.0",
     "urijs": "^1.19.11"
   },
   "devDependencies": {

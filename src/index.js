@@ -1,7 +1,8 @@
 import L from "leaflet";
 import parseGeoRaster from "georaster";
 import GeoRasterLayer from "georaster-layer-for-leaflet";
-import reprojectBoundingBox from "reproject-bbox";
+import bboxPolygon from "@turf/bbox-polygon";
+import reprojectGeoJSON from "reproject-geojson";
 import booleanPointInPolygon from "@turf/boolean-point-in-polygon";
 import URI from "urijs";
 
@@ -524,13 +525,9 @@ const stacLayer = async (data, options = {}) => {
           } catch (error) {
             if (useTileLayer) await addTileLayer();
           }
+
           const bbox = [georaster.xmin, georaster.ymin, georaster.xmax, georaster.ymax];
-          const reprojectedBoundingBox = reprojectBoundingBox({
-            bbox,
-            from: georaster.projection,
-            to: 4326
-          });
-          bounds = bboxToLatLngBounds(reprojectedBoundingBox);
+          bounds = reprojectGeoJSON(bboxPolygon(bbox), { from: georaster.projection, to: 4326 });
           fillOpacity = 0;
         } catch (error) {
           console.error("caught error so checking geometry:", error);
@@ -540,7 +537,12 @@ const stacLayer = async (data, options = {}) => {
 
     if (bounds) {
       if (debugLevel >= 1) console.log("[stac-layer] adding bounds layer");
-      const lyr = L.rectangle(bounds, { fillOpacity });
+      let lyr;
+      if (bounds.type === "Feature") {
+        lyr = L.geoJSON(bounds, { fillOpacity });
+      } else {
+        lyr = L.rectangle(bounds, { fillOpacity });
+      }
       bindDataToClickEvent(lyr);
       layerGroup.addLayer(lyr);
     }
