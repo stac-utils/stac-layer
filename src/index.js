@@ -18,9 +18,8 @@ import createGeoRasterLayer from "./utils/create-georaster-layer.js";
 // utility functions
 // get asset extension, if type and if missing type or maybe throw an error
 // that item is missing a type
-const isJPG = type => !!type.match(/^image\/jpe?g/i);
-const isPNG = type => !!type.match(/^image\/png/i);
-const isImageType = type => isJPG(type) || isPNG(type);
+
+const isImageType = type => MIME_TYPES.BROWSER.includes(type);
 const isAssetCOG = asset =>
   MIME_TYPES.COG.includes(asset.type) && typeof asset.href === "string" && asset.href.length > 0;
 

@@ -25,8 +25,7 @@ export const MIME_TYPES = {
     "image/vnd.stac.geotiff",
     "image/vnd.stac.geotiff; cloud-optimized=true"
   ],
-  JPG: ["image/jpeg", "image/jpg"],
-  PNG: ["image/png"]
+  BROWSER: ["image/jpeg", "image/jpg", "image/png", "image/apng", "image/gif", "image/webp"]
 };
 
 export const GEORASTER_KEYS = [
