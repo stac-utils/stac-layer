@@ -11,6 +11,7 @@
     "test": "test"
   },
   "files": [
+    "babel.config.json",
     "src/index.js",
     "src/data.js",
     "src/utils/bboxLayer.js",
