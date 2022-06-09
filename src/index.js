@@ -76,6 +76,56 @@ function getDataType(data) {
   }
 }
 
+async function addOverviewAssetForFeature(feature, layerGroup, crossOrigin, errorCallback) {
+  if (!('bbox' in feature)) return;
+
+  const { asset } = getOverviewAsset(feature.assets);
+  if (isImageType(asset.type)) {
+    const lyr = await imageOverlay(
+      asset.href,
+      [
+        [feature.bbox[1], feature.bbox[0]],
+        [feature.bbox[3], feature.bbox[2]]
+      ],
+      crossOrigin
+    );
+    if (lyr === null) {
+      if (errorCallback) errorCallback();
+      return;
+    }
+    layerGroup.addLayer(lyr);
+    lyr.on("error", () => {
+      layerGroup.removeLayer(lyr);
+      if (errorCallback) errorCallback();
+    });
+  }
+}
+
+async function addThumbnailAssetForFeature(feature, layerGroup, crossOrigin, errorCallback) {
+  if (!('bbox' in feature)) return;
+
+  const { asset } = findAsset(feature.assets, "thumbnail");
+  if (isImageType(asset.type)) {
+    const lyr = await imageOverlay(
+      asset.href,
+      [
+        [feature.bbox[1], feature.bbox[0]],
+        [feature.bbox[3], feature.bbox[2]]
+      ],
+      crossOrigin
+    );
+    if (lyr === null) {
+      if (errorCallback) errorCallback();
+      return;
+    }
+    layerGroup.addLayer(lyr);
+    lyr.on("error", () => {
+      layerGroup.removeLayer(lyr);
+      if (errorCallback) errorCallback();
+    });
+  }
+}
+
 // relevant links:
 // https://github.com/radiantearth/stac-browser/blob/v3/src/stac.js
 const stacLayer = async (data, options = {}) => {
@@ -201,6 +251,23 @@ const stacLayer = async (data, options = {}) => {
     // Item Collection aka GeoJSON Feature Collection where each Feature is a STAC Item
     // STAC API /items endpoint also returns a similar Feature Collection
     const lyr = L.geoJSON(data, options);
+
+    data.features.forEach(f => {
+      if (displayPreview) {
+        // If we've got a thumnail asset add it
+        if (hasAsset(f.assets, "thumbnail")) {
+          addThumbnailAssetForFeature(f, layerGroup, options.crossOrigin, () => {
+            // If some reason it's broken try for an overview asset
+            if (hasAsset(f.assets, "overview")) {
+              addOverviewAssetForFeature(f, layerGroup, options.crossOrigin);
+            }
+          });
+        } else if (!hasAsset(f.assets, "thumbnail") && hasAsset(f.assets, "overview")) {
+          // If we don't have a thumbail let's try for an overview asset
+          addOverviewAssetForFeature(f, layerGroup, options.crossOrigin);
+        }
+      }
+    });
     bindDataToClickEvent(lyr, e => {
       try {
         const { lat, lng } = e.latlng;
@@ -273,13 +340,15 @@ const stacLayer = async (data, options = {}) => {
 
         if (isImageType(type)) {
           const overviewLayer = await imageOverlay(href, bounds, options.crossOrigin);
-          bindDataToClickEvent(overviewLayer, asset);
-          // there probably aren't eo:bands attached to an overview
-          // but we include this here just in case
-          layerGroup.stac = { assets: [{ key, asset }], bands: asset?.["eo:bands"] };
-          layerGroup.addLayer(overviewLayer);
-          addedImagery = true;
-          if (debugLevel >= 1) console.log("[stac-layer] succesfully added overview layer");
+          if (overviewLayer !== null) {
+            bindDataToClickEvent(overviewLayer, asset);
+            // there probably aren't eo:bands attached to an overview
+            // but we include this here just in case
+            layerGroup.stac = { assets: [{ key, asset }], bands: asset?.["eo:bands"] };
+            layerGroup.addLayer(overviewLayer);
+            addedImagery = true;
+            if (debugLevel >= 1) console.log("[stac-layer] succesfully added overview layer");
+          }
         } else if (isAssetCOG(asset)) {
           if (preferTileLayer) {
             await addTileLayer({ asset, href, isCOG: true, isVisual: true, key });
@@ -318,10 +387,12 @@ const stacLayer = async (data, options = {}) => {
 
         if (isImageType(type)) {
           const thumbLayer = await imageOverlay(href, bounds, options.crossOrigin);
-          bindDataToClickEvent(thumbLayer, data);
-          layerGroup.addLayer(thumbLayer);
-          addedImagery = true;
-          if (debugLevel >= 1) console.log("[stac-layer] succesfully added thumbnail layer");
+          if (thumbLayer !== null) {
+            bindDataToClickEvent(thumbLayer, data);
+            layerGroup.addLayer(thumbLayer);
+            addedImagery = true;
+            if (debugLevel >= 1) console.log("[stac-layer] succesfully added thumbnail layer");
+          }
         }
       } catch (error) {
         if (debugLevel >= 1)
@@ -339,10 +410,12 @@ const stacLayer = async (data, options = {}) => {
 
         if (isImageType(type)) {
           const previewLayer = await imageOverlay(href, bounds, options.crossOrigin);
-          bindDataToClickEvent(previewLayer, data);
-          layerGroup.addLayer(previewLayer);
-          addedImagery = true;
-          if (debugLevel >= 1) console.log("[stac-layer] succesfully added preview layer");
+          if (previewLayer !== null) {
+            bindDataToClickEvent(previewLayer, data);
+            layerGroup.addLayer(previewLayer);
+            addedImagery = true;
+            if (debugLevel >= 1) console.log("[stac-layer] succesfully added preview layer");
+          }
         }
       } catch (error) {
         if (debugLevel >= 1)
@@ -472,9 +545,11 @@ const stacLayer = async (data, options = {}) => {
       }
 
       const lyr = await imageOverlay(href, bounds, options.crossOrigin);
-      bindDataToClickEvent(lyr);
-      layerGroup.addLayer(lyr);
-      fillOpacity = 0;
+      if (lyr !== null) {
+        bindDataToClickEvent(lyr);
+        layerGroup.addLayer(lyr);
+        fillOpacity = 0;
+      }
     } else if (MIME_TYPES.GEOTIFF.includes(type)) {
       const addTileLayer = async () => {
         try {
