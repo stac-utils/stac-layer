@@ -1,5 +1,3 @@
-import "@babel/polyfill";
-
 import L from "leaflet";
 import parseGeoRaster from "georaster";
 import GeoRasterLayer from "georaster-layer-for-leaflet";
