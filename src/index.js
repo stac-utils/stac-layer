@@ -23,7 +23,8 @@ import createGeoRasterLayer from "./utils/create-georaster-layer.js";
 const isJPG = type => !!type.match(/^image\/jpe?g/i);
 const isPNG = type => !!type.match(/^image\/png/i);
 const isImageType = type => isJPG(type) || isPNG(type);
-const isAssetCOG = asset => MIME_TYPES.COG.includes(asset.type) && typeof asset.href === 'string' && asset.href.length > 0;
+const isAssetCOG = asset =>
+  MIME_TYPES.COG.includes(asset.type) && typeof asset.href === "string" && asset.href.length > 0;
 
 const getOverviewAsset = assets => findAsset(assets, "overview");
 const hasAsset = (assets, key) => !!findAsset(assets, key);
@@ -77,35 +78,53 @@ function getDataType(data) {
   }
 }
 
-async function addOverviewAssetForFeature (feature, layerGroup, crossOrigin, errorCallback) {
+async function addOverviewAssetForFeature(feature, layerGroup, crossOrigin, errorCallback) {
+  if (!('bbox' in feature)) return;
+
   const { asset } = getOverviewAsset(feature.assets);
   if (isImageType(asset.type)) {
-    const lyr = await imageOverlay(asset.href, [[feature.bbox[1], feature.bbox[0]], [feature.bbox[3], feature.bbox[2]]], crossOrigin);
+    const lyr = await imageOverlay(
+      asset.href,
+      [
+        [feature.bbox[1], feature.bbox[0]],
+        [feature.bbox[3], feature.bbox[2]]
+      ],
+      crossOrigin
+    );
     if (lyr === null) {
-      if (errorCallback) errorCallback()
-      return
+      if (errorCallback) errorCallback();
+      return;
     }
-    layerGroup.addLayer(lyr)
-    lyr.on('error', () => {
-      layerGroup.removeLayer(lyr)
-      if (errorCallback) errorCallback()
-    })
+    layerGroup.addLayer(lyr);
+    lyr.on("error", () => {
+      layerGroup.removeLayer(lyr);
+      if (errorCallback) errorCallback();
+    });
   }
 }
 
-async function addThumbnailAssetForFeature (feature, layerGroup, crossOrigin, errorCallback) {
-  const { asset } = findAsset(feature.assets, 'thumbnail');
-  if (isImageType(asset.type)) { 
-    const lyr = await imageOverlay(asset.href, [[feature.bbox[1], feature.bbox[0]], [feature.bbox[3], feature.bbox[2]]], crossOrigin);
+async function addThumbnailAssetForFeature(feature, layerGroup, crossOrigin, errorCallback) {
+  if (!('bbox' in feature)) return;
+
+  const { asset } = findAsset(feature.assets, "thumbnail");
+  if (isImageType(asset.type)) {
+    const lyr = await imageOverlay(
+      asset.href,
+      [
+        [feature.bbox[1], feature.bbox[0]],
+        [feature.bbox[3], feature.bbox[2]]
+      ],
+      crossOrigin
+    );
     if (lyr === null) {
-      if (errorCallback) errorCallback()
-      return
+      if (errorCallback) errorCallback();
+      return;
     }
-    layerGroup.addLayer(lyr)
-    lyr.on('error', () => {
-      layerGroup.removeLayer(lyr)
-      if (errorCallback) errorCallback()
-    })
+    layerGroup.addLayer(lyr);
+    lyr.on("error", () => {
+      layerGroup.removeLayer(lyr);
+      if (errorCallback) errorCallback();
+    });
   }
 }
 
@@ -231,23 +250,21 @@ const stacLayer = async (data, options = {}) => {
     const lyr = L.geoJSON(data, options);
 
     data.features.forEach(f => {
-
       if (displayPreview) {
         // If we've got a thumnail asset add it
-        if (hasAsset(f.assets, "thumbnail")) { 
+        if (hasAsset(f.assets, "thumbnail")) {
           addThumbnailAssetForFeature(f, layerGroup, options.crossOrigin, () => {
             // If some reason it's broken try for an overview asset
             if (hasAsset(f.assets, "overview")) {
-              addOverviewAssetForFeature(f, layerGroup, options.crossOrigin)
+              addOverviewAssetForFeature(f, layerGroup, options.crossOrigin);
             }
-          })
+          });
         } else if (!hasAsset(f.assets, "thumbnail") && hasAsset(f.assets, "overview")) {
-            // If we don't have a thumbail let's try for an overview asset
-            addOverviewAssetForFeature(f, layerGroup, options.crossOrigin)
+          // If we don't have a thumbail let's try for an overview asset
+          addOverviewAssetForFeature(f, layerGroup, options.crossOrigin);
+        }
       }
-    }
-
-    })
+    });
     bindDataToClickEvent(lyr, e => {
       try {
         const { lat, lng } = e.latlng;
@@ -337,7 +354,7 @@ const stacLayer = async (data, options = {}) => {
             layerGroup.stac = { assets: [{ key, asset }], bands: asset?.["eo:bands"] };
             layerGroup.addLayer(overviewLayer);
             addedImagery = true;
-            if (debugLevel >= 1) console.log("[stac-layer] succesfully added overview layer");            
+            if (debugLevel >= 1) console.log("[stac-layer] succesfully added overview layer");
           }
         } else if (isAssetCOG(asset)) {
           if (preferTileLayer) {
@@ -381,7 +398,7 @@ const stacLayer = async (data, options = {}) => {
             bindDataToClickEvent(thumbLayer, data);
             layerGroup.addLayer(thumbLayer);
             addedImagery = true;
-            if (debugLevel >= 1) console.log("[stac-layer] succesfully added thumbnail layer");            
+            if (debugLevel >= 1) console.log("[stac-layer] succesfully added thumbnail layer");
           }
         }
       } catch (error) {
@@ -404,7 +421,7 @@ const stacLayer = async (data, options = {}) => {
             bindDataToClickEvent(previewLayer, data);
             layerGroup.addLayer(previewLayer);
             addedImagery = true;
-            if (debugLevel >= 1) console.log("[stac-layer] succesfully added preview layer");            
+            if (debugLevel >= 1) console.log("[stac-layer] succesfully added preview layer");
           }
         }
       } catch (error) {
