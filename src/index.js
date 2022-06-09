@@ -77,7 +77,7 @@ function getDataType(data) {
 }
 
 async function addOverviewAssetForFeature(feature, layerGroup, crossOrigin, errorCallback) {
-  if (!('bbox' in feature)) return;
+  if (!("bbox" in feature)) return;
 
   const { asset } = getOverviewAsset(feature.assets);
   if (isImageType(asset.type)) {
@@ -102,7 +102,7 @@ async function addOverviewAssetForFeature(feature, layerGroup, crossOrigin, erro
 }
 
 async function addThumbnailAssetForFeature(feature, layerGroup, crossOrigin, errorCallback) {
-  if (!('bbox' in feature)) return;
+  if (!("bbox" in feature)) return;
 
   const { asset } = findAsset(feature.assets, "thumbnail");
   if (isImageType(asset.type)) {
