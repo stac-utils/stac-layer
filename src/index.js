@@ -334,7 +334,7 @@ const stacLayer = async (data, options = {}) => {
     // first, check if we're supposed to be showing a particular asset
     if (displayAssetId !== null) {
       const asset = assets[displayAssetId]
-      if (isAssetCOG(asset)) {
+      if (asset !== undefined && isAssetCOG(asset)) {
         const href = toAbsoluteHref(asset.href);
         try {
           const georasterLayer = await createGeoRasterLayer(href, options);
