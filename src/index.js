@@ -145,6 +145,9 @@ const stacLayer = async (data, options = {}) => {
   const preferTileLayer = (useTileLayer && !options.useTileLayerAsFallback) || false;
   if (debugLevel >= 2) console.log("[stac-layer] preferTileLayer:", preferTileLayer);
 
+  const displayAssetId = options.displayAssetId ? options.displayAssetId : null;
+
+
   // get link to self, which we might need later
   const selfHref = findSelfHref(data);
   if (debugLevel >= 2) console.log("[stac-layer] self href:", selfHref);
@@ -328,8 +331,27 @@ const stacLayer = async (data, options = {}) => {
       }
     };
 
-    // first, check for overview
-    if (displayOverview && hasAsset(assets, "overview")) {
+    // first, check if we're supposed to be showing a particular asset
+    if (displayAssetId !== null) {
+      const asset = assets[displayAssetId]
+      if (isAssetCOG(asset)) {
+        const href = toAbsoluteHref(asset.href);
+        try {
+          const georasterLayer = await createGeoRasterLayer(href, options);
+          if (debugLevel >= 1) console.log("[stac-layer] successfully created layer for", asset);
+          bindDataToClickEvent(georasterLayer, asset);
+          layerGroup.stac = { assets: [{ key: displayAssetId, asset }] };
+          setFallback(georasterLayer, () => addTileLayer({ asset, href, isCOG: true, isVisual: false, key: displayAssetId }));
+          layerGroup.addLayer(georasterLayer);
+          addedImagery = true;
+        } catch (error) {
+          console.error("[stac-layer] failed to create georaster layer because of the following error:", error);
+        }    
+      }
+    }
+
+    // then check for overview
+    if (addedImagery === false && displayOverview && hasAsset(assets, "overview")) {
       try {
         if (debugLevel >= 1) console.log(`[stac-layer] found image overview`);
 
@@ -459,6 +481,7 @@ const stacLayer = async (data, options = {}) => {
     // if we still haven't found a valid imagery layer yet, just add the first COG
     const cogs = Object.entries(assets).filter(entry => isAssetCOG(entry[1]));
     if (!addedImagery && cogs.length >= 1) {
+      console.log('adding a COG')
       if (debugLevel >= 1) console.log(`[stac-layer] defaulting to trying to display the first COG asset`);
       const [key, asset] = cogs[0];
       const href = toAbsoluteHref(asset.href);
