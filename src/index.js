@@ -162,7 +162,7 @@ const stacLayer = async (data, options = {}) => {
     let uri = URI(href);
     if (uri.is("relative")) {
       if (!baseUrl) {
-        throw new Error(`[stact-layer] can't determine an absolute url for "${href}" without a baseUrl`);
+        throw new Error(`[stac-layer] can't determine an absolute url for "${href}" without a baseUrl`);
       }
       uri = uri.absoluteTo(baseUrl);
     }
