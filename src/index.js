@@ -145,8 +145,8 @@ const stacLayer = async (data, options = {}) => {
   const preferTileLayer = (useTileLayer && !options.useTileLayerAsFallback) || false;
   if (debugLevel >= 2) console.log("[stac-layer] preferTileLayer:", preferTileLayer);
 
-  const displayAssetId = options.displayAssetId ? options.displayAssetId : null;
-
+  let assetsOption = options.assets ? options.assets : [];
+  assetsOption = Array.isArray(assetsOption) ? assetsOption : [assetsOption];
 
   // get link to self, which we might need later
   const selfHref = findSelfHref(data);
@@ -332,21 +332,29 @@ const stacLayer = async (data, options = {}) => {
     };
 
     // first, check if we're supposed to be showing a particular asset
-    if (displayAssetId !== null) {
-      const asset = assets[displayAssetId]
-      if (asset !== undefined && isAssetCOG(asset)) {
-        const href = toAbsoluteHref(asset.href);
-        try {
-          const georasterLayer = await createGeoRasterLayer(href, options);
-          if (debugLevel >= 1) console.log("[stac-layer] successfully created layer for", asset);
-          bindDataToClickEvent(georasterLayer, asset);
-          layerGroup.stac = { assets: [{ key: displayAssetId, asset }] };
-          setFallback(georasterLayer, () => addTileLayer({ asset, href, isCOG: true, isVisual: false, key: displayAssetId }));
-          layerGroup.addLayer(georasterLayer);
-          addedImagery = true;
-        } catch (error) {
-          console.error("[stac-layer] failed to create georaster layer because of the following error:", error);
-        }    
+    if (assetsOption.length > 0) {
+
+      for (let index = 0; index < assetsOption.length; index++) {
+        const assetThing = assetsOption[index];
+        // Handle asset key strings and objects
+        const asset = typeof assetThing === "string" ? assets[assetThing] : assetThing;
+
+        if (asset !== undefined && isAssetCOG(asset)) {
+          const href = toAbsoluteHref(asset.href);
+          try {
+            const georasterLayer = await createGeoRasterLayer(href, options);
+            if (debugLevel >= 1) console.log("[stac-layer] successfully created layer for", asset);
+            bindDataToClickEvent(georasterLayer, asset);
+            layerGroup.stac = { assets: [{ asset }] };
+            setFallback(georasterLayer, () =>
+              addTileLayer({ asset, href, isCOG: true, isVisual: false })
+            );
+            layerGroup.addLayer(georasterLayer);
+            addedImagery = true;
+          } catch (error) {
+            console.error("[stac-layer] failed to create georaster layer because of the following error:", error);
+          }
+        }
       }
     }
 
