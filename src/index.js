@@ -481,7 +481,6 @@ const stacLayer = async (data, options = {}) => {
     // if we still haven't found a valid imagery layer yet, just add the first COG
     const cogs = Object.entries(assets).filter(entry => isAssetCOG(entry[1]));
     if (!addedImagery && cogs.length >= 1) {
-      console.log('adding a COG')
       if (debugLevel >= 1) console.log(`[stac-layer] defaulting to trying to display the first COG asset`);
       const [key, asset] = cogs[0];
       const href = toAbsoluteHref(asset.href);
