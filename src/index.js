@@ -333,7 +333,6 @@ const stacLayer = async (data, options = {}) => {
 
     // first, check if we're supposed to be showing a particular asset
     if (assetsOption.length > 0) {
-
       for (let index = 0; index < assetsOption.length; index++) {
         const assetThing = assetsOption[index];
         // Handle asset key strings and objects
@@ -346,9 +345,7 @@ const stacLayer = async (data, options = {}) => {
             if (debugLevel >= 1) console.log("[stac-layer] successfully created layer for", asset);
             bindDataToClickEvent(georasterLayer, asset);
             layerGroup.stac = { assets: [{ asset }] };
-            setFallback(georasterLayer, () =>
-              addTileLayer({ asset, href, isCOG: true, isVisual: false })
-            );
+            setFallback(georasterLayer, () => addTileLayer({ asset, href, isCOG: true, isVisual: false }));
             layerGroup.addLayer(georasterLayer);
             addedImagery = true;
           } catch (error) {
