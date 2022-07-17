@@ -210,7 +210,7 @@ const stacLayer = async (data, options = {}) => {
     } else if (name === "fallback") {
       onFallbackHandlers.push(callback);
       return this;
-    } else {
+    } else if (this.on2) {
       return this.on2(...arguments);
     }
   };
