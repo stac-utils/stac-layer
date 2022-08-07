@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.8.0/dist/leaflet.css"/>
+    <style>
+      #map {
+        bottom: 0;
+        left: 0;
+        position: absolute;
+        right: 0;
+        top: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="map"></div>
+    <script src="https://unpkg.com/leaflet@1.8.0/dist/leaflet.js"></script>
+    <script src="/dist/stac-layer.min.js" type="module"></script>
+    <script type="module">
+      // initalize leaflet map
+      const map = L.map('map').setView([0, 0], 5);
+
+      // add OpenStreetMap basemap
+      L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png', {
+          attribution: '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
+      }).addTo(map);
+
+      // https://cbers-stac-1-0-0.s3.amazonaws.com/CBERS4A/MUX/097/097/CBERS_4A_MUX_20220313_097_097_L4.json
+      // https://cbers-stac-1-0-0.s3.amazonaws.com/CBERS4A/WPM/209/139/CBERS_4A_WPM_20200730_209_139_L4.json
+      const url_to_stac_item = "https://cbers-stac-1-0-0.s3.amazonaws.com/CBERS4A/MUX/203/138/CBERS_4A_MUX_20210905_203_138_L4.json";
+
+      fetch(url_to_stac_item).then(res => res.json()).then(async feature => {
+        const lyr = await L.stacLayer(feature, {
+          debugLevel: 2,
+          tileUrlTemplate: `http://localhost:8000/stac/tiles/{z}/{x}/{y}@2x?url={url}&assets=B3,`,
+          timeout: 10,
+          assets: [
+            "B3", "B2", "B1"
+          ]
+        });
+        lyr.on('click', console.log);
+        lyr.addTo(map);
+        map.fitBounds(lyr.getLayers()[0].getBounds());
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"/>
+    <style>
+      #map {
+        bottom: 0;
+        left: 0;
+        position: absolute;
+        right: 0;
+        top: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="map"></div>
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <script src="/dist/stac-layer.min.js" type="module"></script>
+    <script type="module">
+      // initalize leaflet map
+      const map = L.map('map').setView([0, 0], 5);
+
+      // add OpenStreetMap basemap
+      L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png', {
+          attribution: '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
+      }).addTo(map);
+
+
+      const url_to_stac_catalog = "https://raw.githubusercontent.com/cholmes/pdd-stac/beta2/disasters/hurricane-harvey/catalog.json";
+
+      fetch(url_to_stac_catalog).then(res => res.json()).then(async url_to_stac_catalog => {
+        try {
+          const lyr = await L.stacLayer(url_to_stac_catalog, { debugLevel: 2 });
+        } catch (error) {
+          alert(error);
+        }
+      });
+    </script>
+  </body>
+</html>
