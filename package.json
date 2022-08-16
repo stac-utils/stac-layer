@@ -33,11 +33,11 @@
   ],
   "scripts": {
     "build": "webpack",
-    "dev": "concurrently \"npx snowpack build --polyfill-node --watch\" \"cd build && npx http-server\"",
+    "dev": "concurrently \"WEBPACK_WATCH=true webpack\" \"npm run serve\"",
     "format": "npx prettier --arrow-parens=avoid --print-width=120 --trailing-comma=none --write src/*.js src/*/*.js",
-    "serve": "http-server --cors",
+    "serve": "npx srvd --debug",
     "test": "echo 'no automatic tests'",
-    "tiler": "docker run --name titiler -p 8000:8000 --env PORT=8000 --rm -t developmentseed/titiler"
+    "tiler": "docker run --env-file=./.env --name titiler -p 8000:8000 --env PORT=8000 --rm -t developmentseed/titiler"
   },
   "repository": {
     "type": "git",
@@ -80,9 +80,9 @@
     "@babel/preset-env": "^7.18.2",
     "babel-loader": "^8.2.2",
     "concurrently": "^7.3.0",
+    "envisage": "^0.1.0",
     "eslint-config-prettier": "^8.3.0",
     "http-server": "^14.1.0",
-    "snowpack": "^3.7.1",
     "webpack": "^5.42.0",
     "webpack-cli": "^4.9.2"
   },

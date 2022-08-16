@@ -1,7 +1,7 @@
+const envisage = require("envisage");
 const path = require("path");
 
-module.exports = {
-  watch: process.env.WEBPACK_WATCH === "true",
+const config = {
   entry: "./src/index.js",
   mode: "production",
   target: "web",
@@ -53,3 +53,7 @@ module.exports = {
     }
   }
 };
+
+envisage.assign({ target: config, prefix: "WEBPACK" });
+
+module.exports = config;
