@@ -21,8 +21,11 @@ import createGeoRasterLayer from "./utils/create-georaster-layer.js";
 // that item is missing a type
 
 const isImageType = type => MIME_TYPES.BROWSER.includes(type);
-const isAssetCOG = asset =>
-  MIME_TYPES.COG.includes(asset.type) && typeof asset.href === "string" && asset.href.length > 0;
+const isAssetCOG = asset => isAssetGeoTiff(asset, true);
+const isAssetGeoTiff = (asset, cloutOptimized = false) => {
+  let types = cloutOptimized ? MIME_TYPES.COG : MIME_TYPES.GEOTIFF;
+  return types.includes(asset.type) && typeof asset.href === "string" && asset.href.length > 0;
+}
 
 const getOverviewAsset = assets => findAsset(assets, "overview");
 const hasAsset = (assets, key) => !!findAsset(assets, key);
@@ -338,14 +341,14 @@ const stacLayer = async (data, options = {}) => {
         // Handle asset key strings and objects
         const asset = typeof assetThing === "string" ? assets[assetThing] : assetThing;
 
-        if (asset !== undefined && isAssetCOG(asset)) {
+        if (asset !== undefined && isAssetGeoTiff(asset)) {
           const href = toAbsoluteHref(asset.href);
           try {
             const georasterLayer = await createGeoRasterLayer(href, options);
             if (debugLevel >= 1) console.log("[stac-layer] successfully created layer for", asset);
             bindDataToClickEvent(georasterLayer, asset);
             layerGroup.stac = { assets: [{ asset }] };
-            setFallback(georasterLayer, () => addTileLayer({ asset, href, isCOG: true, isVisual: false }));
+            setFallback(georasterLayer, () => addTileLayer({ asset, href, isCOG: isAssetCOG(asset), isVisual: false }));
             layerGroup.addLayer(georasterLayer);
             addedImagery = true;
           } catch (error) {
@@ -376,9 +379,10 @@ const stacLayer = async (data, options = {}) => {
             addedImagery = true;
             if (debugLevel >= 1) console.log("[stac-layer] succesfully added overview layer");
           }
-        } else if (isAssetCOG(asset)) {
+        } else if (isAssetGeoTiff(asset)) {
+          const isCOG = isAssetCOG(asset);
           if (preferTileLayer) {
-            await addTileLayer({ asset, href, isCOG: true, isVisual: true, key });
+            await addTileLayer({ asset, href, isCOG, isVisual: true, key });
           }
 
           if (!addedImagery) {
@@ -386,7 +390,7 @@ const stacLayer = async (data, options = {}) => {
               const georasterLayer = await createGeoRasterLayer(href, options);
               bindDataToClickEvent(georasterLayer, asset);
               layerGroup.stac = { assets: [{ key, asset }], bands: asset?.["eo:bands"] };
-              setFallback(georasterLayer, () => addTileLayer({ asset, href, isCOG: true, isVisual: true, key }));
+              setFallback(georasterLayer, () => addTileLayer({ asset, href, isCOG, isVisual: true, key }));
               layerGroup.addLayer(georasterLayer);
               addedImagery = true;
             } catch (error) {
@@ -395,7 +399,7 @@ const stacLayer = async (data, options = {}) => {
           }
 
           if (!preferTileLayer && useTileLayer) {
-            await addTileLayer({ asset, href, isCOG: true, isVisual: true, key });
+            await addTileLayer({ asset, href, isCOG, isVisual: true, key });
           }
         }
       } catch (error) {
@@ -453,12 +457,13 @@ const stacLayer = async (data, options = {}) => {
     // check for non-standard asset with the key "visual"
     if (addedImagery === false && displayOverview && hasAsset(assets, "visual")) {
       const { asset, key } = findAsset(assets, "visual");
-      if (isAssetCOG(asset)) {
+      if (isAssetGeoTiff(asset)) {
+        const isCOG = isAssetCOG(asset);
         if (debugLevel >= 1) console.log(`[stac-layer] found visual asset, so displaying that`);
         const href = toAbsoluteHref(asset.href);
 
         if (preferTileLayer) {
-          await addTileLayer({ asset, href, isCOG: true, isVisual: true, key });
+          await addTileLayer({ asset, href, isCOG, isVisual: true, key });
         }
 
         if (addedImagery === false) {
@@ -469,7 +474,7 @@ const stacLayer = async (data, options = {}) => {
             });
             layerGroup.stac = { assets: [{ key, asset }], bands: asset?.["eo:bands"] };
             bindDataToClickEvent(georasterLayer, asset);
-            setFallback(georasterLayer, () => addTileLayer({ asset, href, isCOG: true, isVisual: true, key }));
+            setFallback(georasterLayer, () => addTileLayer({ asset, href, isCOG, isVisual: true, key }));
             layerGroup.addLayer(georasterLayer);
             addedImagery = true;
           } catch (error) {
@@ -478,20 +483,21 @@ const stacLayer = async (data, options = {}) => {
         }
 
         if (addedImagery === false && !preferTileLayer && useTileLayer) {
-          await addTileLayer({ asset, href, isCOG: true, isVisual: true, key });
+          await addTileLayer({ asset, href, isCOG, isVisual: true, key });
         }
       }
     }
 
-    // if we still haven't found a valid imagery layer yet, just add the first COG
-    const cogs = Object.entries(assets).filter(entry => isAssetCOG(entry[1]));
-    if (!addedImagery && cogs.length >= 1) {
-      if (debugLevel >= 1) console.log(`[stac-layer] defaulting to trying to display the first COG asset`);
-      const [key, asset] = cogs[0];
+    // if we still haven't found a valid imagery layer yet, just add the first GeoTiff (or COG)
+    const geotiffs = Object.entries(assets).filter(entry => isAssetGeoTiff(entry[1]));
+    if (!addedImagery && geotiffs.length >= 1) {
+      if (debugLevel >= 1) console.log(`[stac-layer] defaulting to trying to display the first GeoTiff asset`);
+      const [key, asset] = geotiffs[0];
       const href = toAbsoluteHref(asset.href);
+      const isCOG = isAssetCOG(asset)
 
       if (preferTileLayer) {
-        await addTileLayer({ asset, href, isCOG: true, isVisual: false, key });
+        await addTileLayer({ asset, href, isCOG, isVisual: false, key });
       }
 
       if (!addedImagery) {
@@ -500,7 +506,7 @@ const stacLayer = async (data, options = {}) => {
           if (debugLevel >= 1) console.log("[stac-layer] successfully created layer for", asset);
           bindDataToClickEvent(georasterLayer, asset);
           layerGroup.stac = { assets: [{ key, asset }], bands: asset?.["eo:bands"] };
-          setFallback(georasterLayer, () => addTileLayer({ asset, href, isCOG: true, isVisual: false, key }));
+          setFallback(georasterLayer, () => addTileLayer({ asset, href, isCOG, isVisual: false, key }));
           layerGroup.addLayer(georasterLayer);
           addedImagery = true;
         } catch (error) {
@@ -509,7 +515,7 @@ const stacLayer = async (data, options = {}) => {
       }
 
       if (addedImagery === false && !preferTileLayer && useTileLayer) {
-        await addTileLayer({ asset, href, isCOG: true, isVisual: false, key });
+        await addTileLayer({ asset, href, isCOG, isVisual: false, key });
       }
     }
 
