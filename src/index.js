@@ -669,6 +669,8 @@ const stacLayer = async (data, options = {}) => {
     const northEast = [bounds.getNorth(), bounds.getEast()];
     return [southWest, northEast];
   };
+  layerGroup.bringToFront = () => layerGroup.getLayers().forEach(layer => layer.bringToFront());
+  layerGroup.bringToBack = () => layerGroup.getLayers().forEach(layer => layer.bringToBack());
 
   if (!layerGroup.options) layerGroup.options = {};
 
