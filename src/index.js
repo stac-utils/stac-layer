@@ -138,6 +138,9 @@ const stacLayer = async (data, options = {}) => {
   if (debugLevel >= 2) console.log("[stac-layer] data:", data);
   if (debugLevel >= 2) console.log("[stac-layer] options:", options);
 
+  const displayGeoTiffByDefault = [true, false].includes(options.displayGeoTiffByDefault) ? options.displayGeoTiffByDefault : false;
+  if (debugLevel >= 2) console.log("[stac-layer] displayGeoTiffByDefault:", displayGeoTiffByDefault);
+
   const displayPreview = [true, false].includes(options.displayPreview) ? options.displayPreview : false;
   if (debugLevel >= 2) console.log("[stac-layer] displayPreview:", displayPreview);
 
@@ -379,7 +382,7 @@ const stacLayer = async (data, options = {}) => {
             addedImagery = true;
             if (debugLevel >= 1) console.log("[stac-layer] succesfully added overview layer");
           }
-        } else if (isAssetGeoTiff(asset)) {
+        } else if (isAssetGeoTiff(asset, !displayGeoTiffByDefault)) {
           const isCOG = isAssetCOG(asset);
           if (preferTileLayer) {
             await addTileLayer({ asset, href, isCOG, isVisual: true, key });
@@ -457,7 +460,7 @@ const stacLayer = async (data, options = {}) => {
     // check for non-standard asset with the key "visual"
     if (addedImagery === false && displayOverview && hasAsset(assets, "visual")) {
       const { asset, key } = findAsset(assets, "visual");
-      if (isAssetGeoTiff(asset)) {
+      if (isAssetGeoTiff(asset, !displayGeoTiffByDefault)) {
         const isCOG = isAssetCOG(asset);
         if (debugLevel >= 1) console.log(`[stac-layer] found visual asset, so displaying that`);
         const href = toAbsoluteHref(asset.href);
@@ -489,9 +492,9 @@ const stacLayer = async (data, options = {}) => {
     }
 
     // if we still haven't found a valid imagery layer yet, just add the first GeoTiff (or COG)
-    const geotiffs = Object.entries(assets).filter(entry => isAssetGeoTiff(entry[1]));
+    const geotiffs = Object.entries(assets).filter(entry => isAssetGeoTiff(entry[1], !displayGeoTiffByDefault));
     if (!addedImagery && geotiffs.length >= 1) {
-      if (debugLevel >= 1) console.log(`[stac-layer] defaulting to trying to display the first GeoTiff asset`);
+      if (debugLevel >= 1) console.log(`[stac-layer] defaulting to trying to display the first ${displayGeoTiffByDefault ? 'GeoTiff' : 'COG'} asset`);
       const [key, asset] = geotiffs[0];
       const href = toAbsoluteHref(asset.href);
       const isCOG = isAssetCOG(asset)
