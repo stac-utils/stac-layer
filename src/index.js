@@ -22,8 +22,8 @@ import createGeoRasterLayer from "./utils/create-georaster-layer.js";
 
 const isImageType = type => MIME_TYPES.BROWSER.includes(type);
 const isAssetCOG = asset => isAssetGeoTiff(asset, true);
-const isAssetGeoTiff = (asset, cloutOptimized = false) => {
-  let types = cloutOptimized ? MIME_TYPES.COG : MIME_TYPES.GEOTIFF;
+const isAssetGeoTiff = (asset, cloudOptimized = false) => {
+  let types = cloudOptimized ? MIME_TYPES.COG : MIME_TYPES.GEOTIFF;
   return types.includes(asset.type) && typeof asset.href === "string" && asset.href.length > 0;
 }
 
