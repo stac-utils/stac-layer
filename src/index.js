@@ -25,7 +25,7 @@ const isAssetCOG = asset => isAssetGeoTiff(asset, true);
 const isAssetGeoTiff = (asset, cloudOptimized = false) => {
   let types = cloudOptimized ? MIME_TYPES.COG : MIME_TYPES.GEOTIFF;
   return types.includes(asset.type) && typeof asset.href === "string" && asset.href.length > 0;
-}
+};
 
 const getOverviewAsset = assets => findAsset(assets, "overview");
 const hasAsset = (assets, key) => !!findAsset(assets, key);
@@ -138,7 +138,9 @@ const stacLayer = async (data, options = {}) => {
   if (debugLevel >= 2) console.log("[stac-layer] data:", data);
   if (debugLevel >= 2) console.log("[stac-layer] options:", options);
 
-  const displayGeoTiffByDefault = [true, false].includes(options.displayGeoTiffByDefault) ? options.displayGeoTiffByDefault : false;
+  const displayGeoTiffByDefault = [true, false].includes(options.displayGeoTiffByDefault)
+    ? options.displayGeoTiffByDefault
+    : false;
   if (debugLevel >= 2) console.log("[stac-layer] displayGeoTiffByDefault:", displayGeoTiffByDefault);
 
   const displayPreview = [true, false].includes(options.displayPreview) ? options.displayPreview : false;
@@ -494,10 +496,13 @@ const stacLayer = async (data, options = {}) => {
     // if we still haven't found a valid imagery layer yet, just add the first GeoTiff (or COG)
     const geotiffs = Object.entries(assets).filter(entry => isAssetGeoTiff(entry[1], !displayGeoTiffByDefault));
     if (!addedImagery && geotiffs.length >= 1) {
-      if (debugLevel >= 1) console.log(`[stac-layer] defaulting to trying to display the first ${displayGeoTiffByDefault ? 'GeoTiff' : 'COG'} asset`);
+      if (debugLevel >= 1)
+        console.log(
+          `[stac-layer] defaulting to trying to display the first ${displayGeoTiffByDefault ? "GeoTiff" : "COG"} asset`
+        );
       const [key, asset] = geotiffs[0];
       const href = toAbsoluteHref(asset.href);
-      const isCOG = isAssetCOG(asset)
+      const isCOG = isAssetCOG(asset);
 
       if (preferTileLayer) {
         await addTileLayer({ asset, href, isCOG, isVisual: false, key });
