@@ -44,6 +44,7 @@ The following options are supported:
 
 | **Option**                   | **Data Type** | **Default value**                          | **Description** |
 | ---------------------------- | ------------- | ------------------------------------------ |-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `bands`                      | array of numbers | undefined | an array mapping the bands to the output bands. must be of length 3 or 4. |
 | `baseUrl`                    | string        | `href` of the `self` link in the STAC data | The base URL for relative links. Should be provided if the STAC data has no self link and links are not absolute, or you pass a STAC Asset only. |
 | `buildTileUrlTemplate`       | function      | undefined                                  | For server-side rendering of imagery. See the chapter [using a tiler](#using-a-tiler) and [buildTileUrlTemplate](#buildTileUrlTemplate) for details. |
 | `crossOrigin`                | string\|null  | undefined                                  | The value for the [`crossorigin` attribute](https://developer.mozilla.org/en-US/docs/Web/HTML/Attributes/crossorigin) that is set when loading images through the browser. |

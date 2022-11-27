@@ -9,6 +9,11 @@ export default function createGeoRasterLayer(url, options) {
     // just in case
     if (options.debugLevel < 0) options.debugLevel = 0;
 
-    return new GeoRasterLayer({ georaster, ...options });
+    const layer = new GeoRasterLayer({ georaster, ...options });
+
+    // hack to force GeoRasterLayer to calculate statistics
+    if (options.calcStats) layer.calcStats = true;
+
+    return layer;
   });
 }

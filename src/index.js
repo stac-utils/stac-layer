@@ -1,6 +1,4 @@
 import L from "leaflet";
-import parseGeoRaster from "georaster";
-import GeoRasterLayer from "georaster-layer-for-leaflet";
 import bboxPolygon from "@turf/bbox-polygon";
 import reprojectGeoJSON from "reproject-geojson";
 import booleanPointInPolygon from "@turf/boolean-point-in-polygon";
@@ -155,6 +153,19 @@ const stacLayer = async (data, options = {}) => {
 
   let assetsOption = options.assets ? options.assets : [];
   assetsOption = Array.isArray(assetsOption) ? assetsOption : [assetsOption];
+
+  let currentStats;
+  if (Array.isArray(options.bands)) {
+    options = { ...options }; // shallow clone options
+    options.calcStats = true;
+    options.pixelValuesToColorFn = values => {
+      const { mins, ranges } = currentStats;
+      const fitted = values.map((v, i) => Math.round((255 * (v - Math.min(v, mins[i]))) / ranges[i]));
+      const mapped = options.bands.map(bandIndex => fitted[bandIndex]);
+      const [r, g, b, a = 255] = mapped;
+      return `rgba(${r},${g},${b},${a / 255})`;
+    };
+  }
 
   // get link to self, which we might need later
   const selfHref = findSelfHref(data);
@@ -350,6 +361,7 @@ const stacLayer = async (data, options = {}) => {
           const href = toAbsoluteHref(asset.href);
           try {
             const georasterLayer = await createGeoRasterLayer(href, options);
+            currentStats = georasterLayer.currentStats;
             if (debugLevel >= 1) console.log("[stac-layer] successfully created layer for", asset);
             bindDataToClickEvent(georasterLayer, asset);
             layerGroup.stac = { assets: [{ asset }] };
@@ -393,6 +405,7 @@ const stacLayer = async (data, options = {}) => {
           if (!addedImagery) {
             try {
               const georasterLayer = await createGeoRasterLayer(href, options);
+              currentStats = georasterLayer.currentStats;
               bindDataToClickEvent(georasterLayer, asset);
               layerGroup.stac = { assets: [{ key, asset }], bands: asset?.["eo:bands"] };
               setFallback(georasterLayer, () => addTileLayer({ asset, href, isCOG, isVisual: true, key }));
@@ -477,6 +490,7 @@ const stacLayer = async (data, options = {}) => {
               ...options,
               debugLevel: (options.debugLevel || 1) - 1
             });
+            currentStats = georasterLayer.currentStats;
             layerGroup.stac = { assets: [{ key, asset }], bands: asset?.["eo:bands"] };
             bindDataToClickEvent(georasterLayer, asset);
             setFallback(georasterLayer, () => addTileLayer({ asset, href, isCOG, isVisual: true, key }));
@@ -511,6 +525,7 @@ const stacLayer = async (data, options = {}) => {
       if (!addedImagery) {
         try {
           const georasterLayer = await createGeoRasterLayer(href, options);
+          currentStats = georasterLayer.currentStats;
           if (debugLevel >= 1) console.log("[stac-layer] successfully created layer for", asset);
           bindDataToClickEvent(georasterLayer, asset);
           layerGroup.stac = { assets: [{ key, asset }], bands: asset?.["eo:bands"] };
@@ -628,22 +643,21 @@ const stacLayer = async (data, options = {}) => {
         await addTileLayer();
       } else {
         try {
-          const georaster = await parseGeoRaster(href);
           try {
-            const georasterLayer = new GeoRasterLayer({
-              georaster,
-              ...options
-            });
+            const georasterLayer = await createGeoRasterLayer(href, options);
+            const georaster = georasterLayer.options.georaster;
+            // save current stats object for use in pixelValuesToColorFn
+            currentStats = georasterLayer.currentStats;
             layerGroup.stac = { assets: [{ key: null, asset: data }], bands: data?.["eo:bands"] };
             bindDataToClickEvent(georasterLayer);
             setFallback(georasterLayer, addTileLayer);
             layerGroup.addLayer(georasterLayer);
+            const bbox = [georaster.xmin, georaster.ymin, georaster.xmax, georaster.ymax];
+            bounds = reprojectGeoJSON(bboxPolygon(bbox), { from: georaster.projection, to: 4326 });
           } catch (error) {
             if (useTileLayer) await addTileLayer();
           }
 
-          const bbox = [georaster.xmin, georaster.ymin, georaster.xmax, georaster.ymax];
-          bounds = reprojectGeoJSON(bboxPolygon(bbox), { from: georaster.projection, to: 4326 });
           fillOpacity = 0;
         } catch (error) {
           console.error("caught error so checking geometry:", error);
