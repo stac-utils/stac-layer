@@ -34,11 +34,8 @@
         console.log("asset:", asset);
 
         const lyr = await L.stacLayer(asset, {
-          // display only red band
-          pixelValuesToColorFn: ([r, g, b, a]) => {
-            const max = Math.pow(2, 15);
-            return `rgb(${(r / max) * 255},${(r / max) * 255},${(r / max) * 255})`;
-          },
+          // display only the first band (red band)
+          bands: [0, 0, 0],
           bbox: feature.bbox,
           debugLevel: 2,
          });
