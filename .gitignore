@@ -118,3 +118,4 @@ build/
 # lock files
 pnpm-lock.yaml
 .pnpm-store/
+data/*.tif*
