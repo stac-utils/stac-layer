@@ -35,7 +35,8 @@
     "build": "webpack",
     "dev": "concurrently \"WEBPACK_WATCH=true webpack\" \"npm run serve\"",
     "format": "npx prettier --arrow-parens=avoid --print-width=120 --trailing-comma=none --write src/*.js src/*/*.js",
-    "serve": "npx srvd --debug",
+    "test:files": "for f in $(find test | grep html); do echo \"http://localhost:8080/$f\"; done",
+    "serve": "npx srvd --debug --wait=Infinity",
     "test": "echo 'no automatic tests'",
     "tiler": "docker run --env-file=./.env --name titiler -p 8000:8000 --env PORT=8000 --rm -t developmentseed/titiler"
   },
