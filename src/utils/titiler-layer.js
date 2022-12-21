@@ -1,9 +1,15 @@
 import TiTiler from "./titiler.js";
 
+export class TiTilerError extends Error {
+  constructor(code, message, values = {}) {
+    super(message, { cause: { code, values } });
+  }
+}
+
 export default async function tiTilerLayer({ assets, debugLevel = 0, titiler, quiet = false, url }) {
   try {
-    if (!titiler) throw new Error("[titiler-layer] you must specify a url to an instance of TiTiler");
-    if (!url) throw new Error("[titiler] you must specify a url to the data that you want to visualize");
+    if (!titiler) throw new TiTilerError("TilerUrlMissing", "You must specify a url to an instance of TiTiler");
+    if (!url) throw new TiTilerError("DataUrlMissing", "You must specify a url to the data that you want to visualize with TiTiler");
 
     if (debugLevel >= 1) console.log("[titiler-layer] assets:", assets);
     if (debugLevel >= 1) console.log("[titiler-layer] debugLevel:", debugLevel);
@@ -19,23 +25,23 @@ export default async function tiTilerLayer({ assets, debugLevel = 0, titiler, qu
       console.log("[titiler-layer] the following assets are supported via titiler" + supportedAssets);
 
     if (!assets.every(asset => supportedAssets.includes(asset))) {
-      const msg = "[titiler-layer] one or more of the provided assets are not supported";
-      if (debugLevel >= 2) console.log(msg);
+      const msg = "One or more of the provided assets are not supported.";
+      if (debugLevel >= 2) console.log("[titiler-layer] " + msg);
       if (quiet) return;
-      throw new Error(msg);
+      throw new TiTilerError('AssetsNotSupported', msg);
     }
 
     try {
-      console.log("[stac-layer] issuing test request to see if we can fetch tiles through the titiler instance");
+      console.log("[titiler-layer] issuing test request to see if we can fetch tiles through the titiler instance");
       await titiler.stac.tiles.get({ x: 0, y: 0, z: 0, url, assets });
     } catch (error) {
       const msg =
-        "[titiler-layer] we cannot fetch tiles through TiTiler. please consult the network tab in your Dev Tools to see why the request failed. " +
+        "We cannot fetch tiles through TiTiler. Please consult the network tab in your Dev Tools to see why the request failed. " +
         "This can sometimes happen because the TiTiler instance is not reachable or the url is to a requester pays bucket on AWS S3 and " +
         "the TiTiler instance is not set up to pay for requests.";
-      if (debugLevel >= 2) console.log(msg);
+      if (debugLevel >= 2) console.log("[titiler-layer] " + msg);
       if (quiet) return;
-      throw new Error(msg);
+      throw new TiTilerError('UnableToFetch', msg);
     }
     const tileUrlTemplate = `${options.titiler}/stac/tiles?url=${encodeURIComponent(
       selfHref
@@ -46,6 +52,11 @@ export default async function tiTilerLayer({ assets, debugLevel = 0, titiler, qu
   } catch (error) {
     if (debugLevel >= 2) console.log(error);
     if (quiet) return;
-    throw new Error(error);
+    if (error instanceof Error) {
+      throw error;
+    }
+    else {
+      throw new Error(error);
+    }
   }
 }
