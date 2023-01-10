@@ -313,7 +313,7 @@ const stacLayer = async (data, options = {}) => {
             url: href,
             asset,
             key,
-            item: asset,
+            item: data,
             bounds,
             isCOG,
             isVisual

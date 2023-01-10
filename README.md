@@ -81,7 +81,7 @@ const layer = await stacLayer(data, {
     href, // the url to the GeoTIFF
     asset, // the STAC Asset object
     key, // the key or name in the assets object that points to the particular asset
-    item, // the STAC item / feature
+    item, // the STAC Item or STAC Collection, if available
     bounds, // LatLngBounds of the STAC asset
     isCOG: true, // true if the asset is definitely a cloud-optimized GeoTIFF
     isVisual: true, // true when the asset's key is "visual" (case-insensitive)
