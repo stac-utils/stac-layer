@@ -313,7 +313,7 @@ const stacLayer = async (data, options = {}) => {
             url: href,
             asset,
             key,
-            item: data,
+            stac: data,
             bounds,
             isCOG,
             isVisual
@@ -600,7 +600,7 @@ const stacLayer = async (data, options = {}) => {
               url: href,
               asset: data,
               key: null,
-              item: null,
+              stac: null,
               isCOG: MIME_TYPES.COG.includes(type),
               isVisual: null
             });
