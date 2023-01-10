@@ -129,6 +129,12 @@ async function addThumbnailAssetForFeature(feature, layerGroup, crossOrigin, err
   }
 }
 
+export class StacLayerError extends Error {
+  constructor(code, message, values = {}) {
+    super(message, { cause: { code, values } });
+  }
+}
+
 // relevant links:
 // https://github.com/radiantearth/stac-browser/blob/v3/src/stac.js
 const stacLayer = async (data, options = {}) => {
@@ -168,12 +174,16 @@ const stacLayer = async (data, options = {}) => {
 
   const toAbsoluteHref = href => {
     if (!href) {
-      throw new Error("[stac-layer] can't convert nothing to an absolute href");
+      throw new StacLayerError("HrefMissing", "Empty asset URL provided");
     }
     let uri = URI(href);
     if (uri.is("relative")) {
       if (!baseUrl) {
-        throw new Error(`[stac-layer] can't determine an absolute url for "${href}" without a baseUrl`);
+        throw new StacLayerError(
+          "BaseUrlMissing",
+          `Can't determine an absolute URL for "${href}" without a base URL`,
+          {href}
+        );
       }
       uri = uri.absoluteTo(baseUrl);
     }
@@ -580,8 +590,10 @@ const stacLayer = async (data, options = {}) => {
     if (debugLevel >= 1) console.log("[stac-layer] visualizing " + type);
     if (isImageType(type)) {
       if (!bounds) {
-        throw new Error(
-          `[stac-layer] cannot visualize asset of type "${type}" without a location.  Please pass in an options object with bounds or bbox set.`
+        throw new StacLayerError(
+          "LocationMissing",
+          `Can't visualize an asset of type "${type}" without a location.`,
+          {type}
         );
       }
 
@@ -663,7 +675,11 @@ const stacLayer = async (data, options = {}) => {
       layerGroup.addLayer(lyr);
     }
   } else {
-    throw new Error(`[stac-layer] does not support visualization of data of the type "${dataType}"`);
+    throw new StacLayerError(
+      "FormatNotSupported",
+      `Visualizing data of the type "${dataType}" is not supported`,
+      {dataType}
+    );
   }
 
   // use the extent of the vector layer
