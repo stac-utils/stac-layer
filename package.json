@@ -62,7 +62,6 @@
     "@turf/bbox-polygon": "^6.5.0",
     "@turf/boolean-point-in-polygon": "^6.5.0",
     "chroma-js": "^1.4.1",
-    "dynamic-client": "^0.0.1",
     "easy-image-loader": "^0.1.0",
     "georaster": "^1.5.5",
     "georaster-layer-for-leaflet": "^3.7.1",
