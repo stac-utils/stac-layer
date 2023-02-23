@@ -22,7 +22,6 @@
     "src/utils/image-overlay.js",
     "src/utils/is-bounding-box.js",
     "src/utils/is-relative.js",
-    "src/utils/pick.js",
     "src/utils/tile-layer.js",
     "src/utils/titiler.js",
     "src/utils/titiler-layer.js",
