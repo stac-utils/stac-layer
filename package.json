@@ -69,6 +69,7 @@
     "get-depth": "^0.0.3",
     "leaflet": "^1.8.0",
     "reproject-geojson": "^0.2.0",
+    "stac-js": "^0.0.1",
     "urijs": "^1.19.11"
   },
   "devDependencies": {

@@ -13,17 +13,22 @@ import imageOverlay from "./utils/image-overlay.js";
 import tileLayer from "./utils/tile-layer.js";
 import isBoundingBox from "./utils/is-bounding-box.js";
 import getBoundingBox from "./utils/get-bounding-box.js";
-import { DATA_TYPES, EVENT_DATA_TYPES, MIME_TYPES } from "./data.js";
+import { DATA_TYPES, EVENT_DATA_TYPES } from "./data.js";
 import createGeoRasterLayer from "./utils/create-georaster-layer.js";
+
+import { browserImageTypes, geotiffMediaTypes, cogMediaTypes } from "stac-js/src/mediatypes.js";
+import { toAbsolute } from "stac-js/src/http.js";
+import { isObject } from "stac-js/src/utils.js";
+import { default as createStacObject, STAC, Asset } from 'stac-js';
 
 // utility functions
 // get asset extension, if type and if missing type or maybe throw an error
 // that item is missing a type
 
-const isImageType = type => MIME_TYPES.BROWSER.includes(type);
+const isImageType = type => browserImageTypes.includes(type);
 const isAssetCOG = asset => isAssetGeoTiff(asset, true);
 const isAssetGeoTiff = (asset, cloudOptimized = false) => {
-  let types = cloudOptimized ? MIME_TYPES.COG : MIME_TYPES.GEOTIFF;
+  let types = cloudOptimized ? cogMediaTypes : geotiffMediaTypes;
   return types.includes(asset.type) && typeof asset.href === "string" && asset.href.length > 0;
 };
 
@@ -42,9 +47,6 @@ const findLink = (data, key) => {
 };
 
 const hasLink = (data, key) => !!findLink(data, key);
-
-const findSelf = data => findLink(data, "self");
-const findSelfHref = data => findSelf(data)?.href;
 
 const getLatLngBounds = item => {
   const bbox = getBoundingBox(item);
@@ -72,7 +74,7 @@ function getDataType(data) {
   if (Array.isArray(data) && data.every(it => "href" in it)) {
     return DATA_TYPES.STAC_ASSETS;
   }
-  if ("license" in data && "extent" in data) {
+  if ("extent" in data) {
     return DATA_TYPES.STAC_COLLECTION;
   } else {
     return DATA_TYPES.STAC_CATALOG;
@@ -135,8 +137,6 @@ export class StacLayerError extends Error {
   }
 }
 
-// relevant links:
-// https://github.com/radiantearth/stac-browser/blob/v3/src/stac.js
 const stacLayer = async (data, options = {}) => {
   const debugLevel = typeof options.debugLevel === "number" && options.debugLevel >= 1 ? options.debugLevel : 0;
 
@@ -144,51 +144,41 @@ const stacLayer = async (data, options = {}) => {
   if (debugLevel >= 2) console.log("[stac-layer] data:", data);
   if (debugLevel >= 2) console.log("[stac-layer] options:", options);
 
-  const displayGeoTiffByDefault = [true, false].includes(options.displayGeoTiffByDefault)
-    ? options.displayGeoTiffByDefault
-    : false;
+  if (!(data instanceof STAC)) {
+    data = createStacObject(data);
+    if (options.baseUrl) {
+      data.setAbsoluteUrl(options.baseUrl);
+    }
+  }
+
+  const displayGeoTiffByDefault = (options.displayGeoTiffByDefault === true);
   if (debugLevel >= 2) console.log("[stac-layer] displayGeoTiffByDefault:", displayGeoTiffByDefault);
 
-  const displayPreview = [true, false].includes(options.displayPreview) ? options.displayPreview : false;
+  const displayPreview = (options.displayPreview === true);
   if (debugLevel >= 2) console.log("[stac-layer] displayPreview:", displayPreview);
 
-  const displayOverview = [true, false].includes(options.displayOverview) ? options.displayOverview : true;
+  const displayOverview = (options.displayOverview === true);
   if (debugLevel >= 2) console.log("[stac-layer] displayOverview:", displayOverview);
 
   const useTileLayer = options.tileUrlTemplate || options.buildTileUrlTemplate;
   const preferTileLayer = (useTileLayer && !options.useTileLayerAsFallback) || false;
   if (debugLevel >= 2) console.log("[stac-layer] preferTileLayer:", preferTileLayer);
 
-  let assetsOption = options.assets ? options.assets : [];
-  assetsOption = Array.isArray(assetsOption) ? assetsOption : [assetsOption];
+  const assetOption = [];
+  if (isObject(options.assets)) {
+    assetOption.push(new Asset(options.assets, null, data));
+  }
+  else if (Array.isArray(options.assets)) {
+    options.assets.forEach(asset => assetOption.push(new Asset(asset, null, data)))
+  }
 
   // get link to self, which we might need later
-  const selfHref = findSelfHref(data);
-  if (debugLevel >= 2) console.log("[stac-layer] self href:", selfHref);
-
-  let baseUrl = options.baseUrl || selfHref;
+  const selfLink = data.getSelfLink();
+  const baseUrl = options.baseUrl || (selfLink && selfLink.href) || null;
   if (debugLevel >= 2) console.log("[stac-layer] base url:", baseUrl);
 
   // default to filling in the bounds layer unless we successfully visualize an image
   let fillOpacity = 0.2;
-
-  const toAbsoluteHref = href => {
-    if (!href) {
-      throw new StacLayerError("HrefMissing", "Empty asset URL provided");
-    }
-    let uri = URI(href);
-    if (uri.is("relative")) {
-      if (!baseUrl) {
-        throw new StacLayerError(
-          "BaseUrlMissing",
-          `Can't determine an absolute URL for "${href}" without a base URL`,
-          {href}
-        );
-      }
-      uri = uri.absoluteTo(baseUrl);
-    }
-    return uri.toString();
-  };
 
   const layerGroup = L.layerGroup();
 
@@ -271,7 +261,7 @@ const stacLayer = async (data, options = {}) => {
   if (dataType === DATA_TYPES.ITEM_COLLECTION || dataType === DATA_TYPES.STAC_API_ITEMS) {
     // Item Collection aka GeoJSON Feature Collection where each Feature is a STAC Item
     // STAC API /items endpoint also returns a similar Feature Collection
-    const lyr = L.geoJSON(data, options);
+    const lyr = L.geoJSON(data.getGeoJSON(), options);
 
     data.features.forEach(f => {
       if (displayPreview) {
@@ -357,7 +347,7 @@ const stacLayer = async (data, options = {}) => {
         const asset = typeof assetThing === "string" ? assets[assetThing] : assetThing;
 
         if (asset !== undefined && isAssetGeoTiff(asset)) {
-          const href = toAbsoluteHref(asset.href);
+          const href = asset.getAbsoluteHref();
           try {
             const georasterLayer = await createGeoRasterLayer(href, options);
             if (debugLevel >= 1) console.log("[stac-layer] successfully created layer for", asset);
@@ -380,7 +370,7 @@ const stacLayer = async (data, options = {}) => {
 
         const { key, asset } = getOverviewAsset(assets);
         const { type } = asset;
-        const href = toAbsoluteHref(asset.href);
+        const href = asset.getAbsoluteUrl();
         if (debugLevel >= 2) console.log("[stac-layer] overview's href is:", href);
 
         if (isImageType(type)) {
@@ -429,7 +419,7 @@ const stacLayer = async (data, options = {}) => {
         if (debugLevel >= 1) console.log(`[stac-layer] found image thumbnail`);
         const { key, asset } = findAsset(assets, "thumbnail");
         const { type } = asset;
-        const href = toAbsoluteHref(asset.href);
+        const href = asset.getAbsoluteUrl();
 
         if (isImageType(type)) {
           const thumbLayer = await imageOverlay(href, bounds, options.crossOrigin);
@@ -452,7 +442,7 @@ const stacLayer = async (data, options = {}) => {
         if (debugLevel >= 1) console.log(`[stac-layer] found image preview`);
         const preview = findLink(data, "preview");
         const { type } = preview;
-        const href = toAbsoluteHref(preview.href);
+        const href = toAbsolute(preview.href, baseUrl);
 
         if (isImageType(type)) {
           const previewLayer = await imageOverlay(href, bounds, options.crossOrigin);
@@ -475,7 +465,7 @@ const stacLayer = async (data, options = {}) => {
       if (isAssetGeoTiff(asset, !displayGeoTiffByDefault)) {
         const isCOG = isAssetCOG(asset);
         if (debugLevel >= 1) console.log(`[stac-layer] found visual asset, so displaying that`);
-        const href = toAbsoluteHref(asset.href);
+        const href = asset.getAbsoluteUrl();
 
         if (preferTileLayer) {
           await addTileLayer({ asset, href, isCOG, isVisual: true, key });
@@ -511,7 +501,7 @@ const stacLayer = async (data, options = {}) => {
           `[stac-layer] defaulting to trying to display the first ${displayGeoTiffByDefault ? "GeoTiff" : "COG"} asset`
         );
       const [key, asset] = geotiffs[0];
-      const href = toAbsoluteHref(asset.href);
+      const href = asset.getAbsoluteUrl();
       const isCOG = isAssetCOG(asset);
 
       if (preferTileLayer) {
@@ -577,7 +567,7 @@ const stacLayer = async (data, options = {}) => {
     }
   } else if (dataType === DATA_TYPES.STAC_ASSET) {
     const { type } = data;
-    const href = toAbsoluteHref(data.href);
+    const href = toAbsolute(data.href, baseUrl);
     let bounds;
     if (options.latLngBounds) {
       bounds = options.latLngBounds;
@@ -603,7 +593,7 @@ const stacLayer = async (data, options = {}) => {
         layerGroup.addLayer(lyr);
         fillOpacity = 0;
       }
-    } else if (MIME_TYPES.GEOTIFF.includes(type)) {
+    } else if (geotiffMediaTypes.includes(type)) {
       const addTileLayer = async () => {
         try {
           if (options.buildTileUrlTemplate) {
@@ -613,7 +603,7 @@ const stacLayer = async (data, options = {}) => {
               asset: data,
               key: null,
               stac: null,
-              isCOG: MIME_TYPES.COG.includes(type),
+              isCOG: cogMediaTypes.includes(type),
               isVisual: null
             });
             if (debugLevel >= 2) console.log(`[stac-layer] built tile url template: "${tileUrlTemplate}"`);
