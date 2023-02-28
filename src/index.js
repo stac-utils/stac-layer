@@ -4,49 +4,22 @@ import GeoRasterLayer from "georaster-layer-for-leaflet";
 import bboxPolygon from "@turf/bbox-polygon";
 import reprojectGeoJSON from "reproject-geojson";
 import booleanPointInPolygon from "@turf/boolean-point-in-polygon";
-import URI from "urijs";
 
 import bboxToLatLngBounds from "./utils/bboxToLatLngBounds.js";
 import bboxLayer from "./utils/bboxLayer.js";
-import findAsset from "./utils/find-asset.js";
 import imageOverlay from "./utils/image-overlay.js";
 import tileLayer from "./utils/tile-layer.js";
 import isBoundingBox from "./utils/is-bounding-box.js";
 import getBoundingBox from "./utils/get-bounding-box.js";
-import { DATA_TYPES, EVENT_DATA_TYPES } from "./data.js";
 import createGeoRasterLayer from "./utils/create-georaster-layer.js";
+import StacLayerError from "./utils/error.js";
 
-import { browserImageTypes, geotiffMediaTypes, cogMediaTypes } from "stac-js/src/mediatypes.js";
-import { toAbsolute } from "stac-js/src/http.js";
-import { isObject } from "stac-js/src/utils.js";
-import { default as createStacObject, STAC, Asset } from 'stac-js';
+import { canBrowserDisplayImage } from "stac-js/src/mediatypes.js";
+import { default as createStacObject, STAC, Asset, Catalog, Collection, Item, ItemCollection } from 'stac-js';
 
 // utility functions
 // get asset extension, if type and if missing type or maybe throw an error
 // that item is missing a type
-
-const isImageType = type => browserImageTypes.includes(type);
-const isAssetCOG = asset => isAssetGeoTiff(asset, true);
-const isAssetGeoTiff = (asset, cloudOptimized = false) => {
-  let types = cloudOptimized ? cogMediaTypes : geotiffMediaTypes;
-  return types.includes(asset.type) && typeof asset.href === "string" && asset.href.length > 0;
-};
-
-const getOverviewAsset = assets => findAsset(assets, "overview");
-const hasAsset = (assets, key) => !!findAsset(assets, key);
-
-const findLinks = data => {
-  if (Array.isArray(data)) return data;
-  else if (data.links) return data.links;
-};
-
-const findLink = (data, key) => {
-  const links = findLinks(data);
-  key = key.toLowerCase();
-  if (links) return links.find(ln => typeof ln === "object" && ln.rel.toLowerCase() === key);
-};
-
-const hasLink = (data, key) => !!findLink(data, key);
 
 const getLatLngBounds = item => {
   const bbox = getBoundingBox(item);
@@ -55,37 +28,22 @@ const getLatLngBounds = item => {
 };
 
 function getDataType(data) {
-  if (typeof data.type === "string") {
-    const dataType = data.type.toUpperCase();
-    if (dataType === "CATALOG") {
-      return DATA_TYPES.STAC_CATALOG;
-    } else if (dataType === "FEATURECOLLECTION") {
-      return DATA_TYPES.ITEM_COLLECTION;
-    } else if (dataType === "COLLECTION") {
-      return DATA_TYPES.STAC_COLLECTION;
-    } else if (dataType === "FEATURE") {
-      return DATA_TYPES.STAC_ITEM;
-    }
-  }
-
-  if ("href" in data) {
-    return DATA_TYPES.STAC_ASSET;
-  }
-  if (Array.isArray(data) && data.every(it => "href" in it)) {
-    return DATA_TYPES.STAC_ASSETS;
-  }
-  if ("extent" in data) {
-    return DATA_TYPES.STAC_COLLECTION;
+  if (data instanceof ItemCollection) {
+    return "Collection"; // Is this correct?
+  } else if (data instanceof Asset || "href" in data) {
+    return "Asset";
+  } else if (data instanceof STAC) {
+    return data.type;
   } else {
-    return DATA_TYPES.STAC_CATALOG;
+    return "Assets";
   }
 }
 
 async function addOverviewAssetForFeature(feature, layerGroup, crossOrigin, errorCallback) {
-  if (!("bbox" in feature)) return;
+  if (!feature.isItem()) return;
 
-  const { asset } = getOverviewAsset(feature.assets);
-  if (isImageType(asset.type)) {
+  const asset = feature.getAssetWithRole('overview', true);
+  if (asset && asset.canBrowserDisplayImage()) {
     const lyr = await imageOverlay(
       asset.href,
       [
@@ -107,10 +65,10 @@ async function addOverviewAssetForFeature(feature, layerGroup, crossOrigin, erro
 }
 
 async function addThumbnailAssetForFeature(feature, layerGroup, crossOrigin, errorCallback) {
-  if (!("bbox" in feature)) return;
+  if (!feature.isItem()) return;
 
-  const { asset } = findAsset(feature.assets, "thumbnail");
-  if (isImageType(asset.type)) {
+  const asset = feature.getAssetWithRole('thumbnail', true);
+  if (asset && asset.canBrowserDisplayImage()) {
     const lyr = await imageOverlay(
       asset.href,
       [
@@ -131,12 +89,6 @@ async function addThumbnailAssetForFeature(feature, layerGroup, crossOrigin, err
   }
 }
 
-export class StacLayerError extends Error {
-  constructor(code, message, values = {}) {
-    super(message, { cause: { code, values } });
-  }
-}
-
 const stacLayer = async (data, options = {}) => {
   const debugLevel = typeof options.debugLevel === "number" && options.debugLevel >= 1 ? options.debugLevel : 0;
 
@@ -150,6 +102,7 @@ const stacLayer = async (data, options = {}) => {
       data.setAbsoluteUrl(options.baseUrl);
     }
   }
+  if (debugLevel >= 2) console.log("[stac-layer] base url:", data.getAbsoluteUrl());
 
   const displayGeoTiffByDefault = (options.displayGeoTiffByDefault === true);
   if (debugLevel >= 2) console.log("[stac-layer] displayGeoTiffByDefault:", displayGeoTiffByDefault);
@@ -164,18 +117,15 @@ const stacLayer = async (data, options = {}) => {
   const preferTileLayer = (useTileLayer && !options.useTileLayerAsFallback) || false;
   if (debugLevel >= 2) console.log("[stac-layer] preferTileLayer:", preferTileLayer);
 
-  const assetOption = [];
-  if (isObject(options.assets)) {
-    assetOption.push(new Asset(options.assets, null, data));
+  let assetsOption = [];
+  if (Array.isArray(options.assets)) {
+    assetsOption = options.assets.map(asset => {
+      if (typeof asset === 'string') {
+        asset = data.assets[asset];
+      }
+      return new Asset(asset, null, data)
+    });
   }
-  else if (Array.isArray(options.assets)) {
-    options.assets.forEach(asset => assetOption.push(new Asset(asset, null, data)))
-  }
-
-  // get link to self, which we might need later
-  const selfLink = data.getSelfLink();
-  const baseUrl = options.baseUrl || (selfLink && selfLink.href) || null;
-  if (debugLevel >= 2) console.log("[stac-layer] base url:", baseUrl);
 
   // default to filling in the bounds layer unless we successfully visualize an image
   let fillOpacity = 0.2;
@@ -231,22 +181,16 @@ const stacLayer = async (data, options = {}) => {
   const bindDataToClickEvent = (lyr, _data) => {
     lyr.on("click", evt => {
       evt.stac = { data: typeof _data === "function" ? _data(evt) : _data || data };
-      const clickedDataType = getDataType(evt.stac.data);
-      if (
-        [
-          DATA_TYPES.STAC_COLLECTION,
-          DATA_TYPES.STAC_API_COLLECTIONS,
-          DATA_TYPES.ITEM_COLLECTION,
-          DATA_TYPES.STAC_API_ITEMS
-        ].includes(clickedDataType)
-      ) {
-        evt.stac.type = EVENT_DATA_TYPES.COLLECTION;
-      } else if ([DATA_TYPES.STAC_ITEM].includes(clickedDataType)) {
-        evt.stac.type = EVENT_DATA_TYPES.FEATURE;
-      } else if ([DATA_TYPES.STAC_ASSETS].includes(clickedDataType)) {
-        evt.stac.type = EVENT_DATA_TYPES.ASSETS;
-      } else if ([DATA_TYPES.STAC_ASSET].includes(clickedDataType)) {
-        evt.stac.type = EVENT_DATA_TYPES.ASSET;
+      const clickedData = evt.stac.data;
+
+      if (clickedData instanceof ItemCollection) {
+        evt.stac.type = "Collection"; // Is this correct?
+      } else if (clickedData instanceof Assets) {
+        evt.stac.type = "Assets";
+      } else if (clickedData instanceof Asset) {
+        evt.stac.type = "Asset";
+      } else {
+        evt.stac.type = clickedData.type;
       }
       onClickHandlers.forEach(handleOnClick => {
         try {
@@ -258,22 +202,24 @@ const stacLayer = async (data, options = {}) => {
     });
   };
 
-  if (dataType === DATA_TYPES.ITEM_COLLECTION || dataType === DATA_TYPES.STAC_API_ITEMS) {
+  if (data instanceof ItemCollection) {
     // Item Collection aka GeoJSON Feature Collection where each Feature is a STAC Item
     // STAC API /items endpoint also returns a similar Feature Collection
     const lyr = L.geoJSON(data.getGeoJSON(), options);
 
     data.features.forEach(f => {
       if (displayPreview) {
+        const thumbnail = f.getAssetWithRole("thumbnail", true);
+        const overview = f.getAssetWithRole("overview", true);
         // If we've got a thumnail asset add it
-        if (hasAsset(f.assets, "thumbnail")) {
+        if (thumbnail) {
           addThumbnailAssetForFeature(f, layerGroup, options.crossOrigin, () => {
             // If some reason it's broken try for an overview asset
-            if (hasAsset(f.assets, "overview")) {
+            if (overview) {
               addOverviewAssetForFeature(f, layerGroup, options.crossOrigin);
             }
           });
-        } else if (!hasAsset(f.assets, "thumbnail") && hasAsset(f.assets, "overview")) {
+        } else if (!thumbnail && overview) {
           // If we don't have a thumbail let's try for an overview asset
           addOverviewAssetForFeature(f, layerGroup, options.crossOrigin);
         }
@@ -297,10 +243,8 @@ const stacLayer = async (data, options = {}) => {
       return e?.layer?.feature;
     });
     layerGroup.addLayer(lyr);
-  } else if (dataType === DATA_TYPES.STAC_ITEM || dataType === DATA_TYPES.STAC_COLLECTION) {
+  } else if (data instanceof Item || data instanceof Collection) {
     let addedImagery = false;
-
-    const { assets = {} } = data;
 
     const bounds = getLatLngBounds(data);
     if (debugLevel >= 1) console.log(`[stac-layer] item bounds are: ${bounds.toBBoxString()}`);
@@ -321,7 +265,7 @@ const stacLayer = async (data, options = {}) => {
           if (debugLevel >= 2) console.log(`[stac-layer] built tile url template: "${tileUrlTemplate}"`);
           const tileLayerOptions = { bounds, ...options, url: href };
           const lyr = await tileLayer(tileUrlTemplate, tileLayerOptions);
-          layerGroup.stac = { assets: [{ key, asset }], bands: asset?.["eo:bands"] };
+          layerGroup.stac = { assets: [{ key, asset }], bands: asset.getBands() };
           bindDataToClickEvent(lyr, asset);
           layerGroup.addLayer(lyr);
           addedImagery = true;
@@ -329,7 +273,7 @@ const stacLayer = async (data, options = {}) => {
           const tileLayerOptions = { bounds, ...options, url: encodeURIComponent(href) };
           const lyr = await tileLayer(options.tileUrlTemplate, tileLayerOptions);
           bindDataToClickEvent(lyr, asset);
-          layerGroup.stac = { assets: [{ key, asset }], bands: asset?.["eo:bands"] };
+          layerGroup.stac = { assets: [{ key, asset }], bands: asset.getBands() };
           layerGroup.addLayer(lyr);
           if (debugLevel >= 2) console.log("[stac-layer] added tile layer to layer group");
           addedImagery = true;
@@ -341,51 +285,49 @@ const stacLayer = async (data, options = {}) => {
 
     // first, check if we're supposed to be showing a particular asset
     if (assetsOption.length > 0) {
-      for (let index = 0; index < assetsOption.length; index++) {
-        const assetThing = assetsOption[index];
-        // Handle asset key strings and objects
-        const asset = typeof assetThing === "string" ? assets[assetThing] : assetThing;
-
-        if (asset !== undefined && isAssetGeoTiff(asset)) {
-          const href = asset.getAbsoluteHref();
-          try {
-            const georasterLayer = await createGeoRasterLayer(href, options);
-            if (debugLevel >= 1) console.log("[stac-layer] successfully created layer for", asset);
-            bindDataToClickEvent(georasterLayer, asset);
-            layerGroup.stac = { assets: [{ asset }] };
-            setFallback(georasterLayer, () => addTileLayer({ asset, href, isCOG: isAssetCOG(asset), isVisual: false }));
-            layerGroup.addLayer(georasterLayer);
-            addedImagery = true;
-          } catch (error) {
-            console.error("[stac-layer] failed to create georaster layer because of the following error:", error);
-          }
+      for (let asset of assetsOption) {
+        if (!asset.isGeoTIFF()) {
+          continue;
+        }
+        const href = asset.getAbsoluteHref();
+        try {
+          const georasterLayer = await createGeoRasterLayer(href, options);
+          if (debugLevel >= 1) console.log("[stac-layer] successfully created layer for", asset);
+          bindDataToClickEvent(georasterLayer, asset);
+          layerGroup.stac = { assets: [{ asset }] };
+          setFallback(georasterLayer, () => addTileLayer({ asset, href, isCOG: asset.isCOG(), isVisual: false }));
+          layerGroup.addLayer(georasterLayer);
+          addedImagery = true;
+        } catch (error) {
+          console.error("[stac-layer] failed to create georaster layer because of the following error:", error);
         }
       }
     }
 
     // then check for overview
-    if (addedImagery === false && displayOverview && hasAsset(assets, "overview")) {
+    const overview = data.getAssetWithRole('overview', true);
+    if (addedImagery === false && displayOverview && overview) {
       try {
         if (debugLevel >= 1) console.log(`[stac-layer] found image overview`);
 
-        const { key, asset } = getOverviewAsset(assets);
-        const { type } = asset;
+        const asset = overview;
+        const key = asset.getKey();
         const href = asset.getAbsoluteUrl();
         if (debugLevel >= 2) console.log("[stac-layer] overview's href is:", href);
 
-        if (isImageType(type)) {
+        if (asset.canBrowserDisplayImage()) {
           const overviewLayer = await imageOverlay(href, bounds, options.crossOrigin);
           if (overviewLayer !== null) {
             bindDataToClickEvent(overviewLayer, asset);
             // there probably aren't eo:bands attached to an overview
             // but we include this here just in case
-            layerGroup.stac = { assets: [{ key, asset }], bands: asset?.["eo:bands"] };
+            layerGroup.stac = { assets: [{ key, asset }], bands: asset.getBands() };
             layerGroup.addLayer(overviewLayer);
             addedImagery = true;
             if (debugLevel >= 1) console.log("[stac-layer] succesfully added overview layer");
           }
-        } else if (isAssetGeoTiff(asset, !displayGeoTiffByDefault)) {
-          const isCOG = isAssetCOG(asset);
+        } else if (displayGeoTiffByDefault ? asset.isGeoTIFF() : asset.isCOG()) {
+          const isCOG = asset.isCOG();
           if (preferTileLayer) {
             await addTileLayer({ asset, href, isCOG, isVisual: true, key });
           }
@@ -394,7 +336,7 @@ const stacLayer = async (data, options = {}) => {
             try {
               const georasterLayer = await createGeoRasterLayer(href, options);
               bindDataToClickEvent(georasterLayer, asset);
-              layerGroup.stac = { assets: [{ key, asset }], bands: asset?.["eo:bands"] };
+              layerGroup.stac = { assets: [{ key, asset }], bands: asset.getBands() };
               setFallback(georasterLayer, () => addTileLayer({ asset, href, isCOG, isVisual: true, key }));
               layerGroup.addLayer(georasterLayer);
               addedImagery = true;
@@ -414,15 +356,12 @@ const stacLayer = async (data, options = {}) => {
     }
 
     // check for thumbnail
-    if (addedImagery === false && displayPreview && hasAsset(assets, "thumbnail")) {
+    const thumbnail = data.getAssetWithRole("thumbnail", true);
+    if (addedImagery === false && displayPreview && thumbnail) {
       try {
         if (debugLevel >= 1) console.log(`[stac-layer] found image thumbnail`);
-        const { key, asset } = findAsset(assets, "thumbnail");
-        const { type } = asset;
-        const href = asset.getAbsoluteUrl();
-
-        if (isImageType(type)) {
-          const thumbLayer = await imageOverlay(href, bounds, options.crossOrigin);
+        if (thumbnail.canBrowserDisplayImage()) {
+          const thumbLayer = await imageOverlay(thumbnail.getAbsoluteUrl(), bounds, options.crossOrigin);
           if (thumbLayer !== null) {
             bindDataToClickEvent(thumbLayer, data);
             layerGroup.addLayer(thumbLayer);
@@ -437,14 +376,13 @@ const stacLayer = async (data, options = {}) => {
     }
 
     // check for preview image
-    if (addedImagery === false && displayPreview && hasLink(data, "preview")) {
+    const preview = data.getLinkWithRel("preview");
+    if (addedImagery === false && displayPreview && preview) {
       try {
         if (debugLevel >= 1) console.log(`[stac-layer] found image preview`);
-        const preview = findLink(data, "preview");
-        const { type } = preview;
-        const href = toAbsolute(preview.href, baseUrl);
+        const { href } = data.toAbsolute(preview);
 
-        if (isImageType(type)) {
+        if (canBrowserDisplayImage(preview)) {
           const previewLayer = await imageOverlay(href, bounds, options.crossOrigin);
           if (previewLayer !== null) {
             bindDataToClickEvent(previewLayer, data);
@@ -460,10 +398,12 @@ const stacLayer = async (data, options = {}) => {
     }
 
     // check for non-standard asset with the key "visual"
-    if (addedImagery === false && displayOverview && hasAsset(assets, "visual")) {
-      const { asset, key } = findAsset(assets, "visual");
-      if (isAssetGeoTiff(asset, !displayGeoTiffByDefault)) {
-        const isCOG = isAssetCOG(asset);
+    const visual = data.getAssetWithRole("visual", true);
+    if (addedImagery === false && displayOverview && visual) {
+      const asset = visual;
+      const key = asset.getKey();
+      if (displayGeoTiffByDefault ? asset.isGeoTIFF() : asset.isCOG()) {
+        const isCOG = asset.isCOG();
         if (debugLevel >= 1) console.log(`[stac-layer] found visual asset, so displaying that`);
         const href = asset.getAbsoluteUrl();
 
@@ -477,7 +417,7 @@ const stacLayer = async (data, options = {}) => {
               ...options,
               debugLevel: (options.debugLevel || 1) - 1
             });
-            layerGroup.stac = { assets: [{ key, asset }], bands: asset?.["eo:bands"] };
+            layerGroup.stac = { assets: [{ key, asset }], bands: asset.getBands() };
             bindDataToClickEvent(georasterLayer, asset);
             setFallback(georasterLayer, () => addTileLayer({ asset, href, isCOG, isVisual: true, key }));
             layerGroup.addLayer(georasterLayer);
@@ -494,7 +434,7 @@ const stacLayer = async (data, options = {}) => {
     }
 
     // if we still haven't found a valid imagery layer yet, just add the first GeoTiff (or COG)
-    const geotiffs = Object.entries(assets).filter(entry => isAssetGeoTiff(entry[1], !displayGeoTiffByDefault));
+    const geotiffs = Object.entries(assets).filter(entry => displayGeoTiffByDefault ? entry[1].isGeoTIFF() : entry[1].isCOG());
     if (!addedImagery && geotiffs.length >= 1) {
       if (debugLevel >= 1)
         console.log(
@@ -502,7 +442,7 @@ const stacLayer = async (data, options = {}) => {
         );
       const [key, asset] = geotiffs[0];
       const href = asset.getAbsoluteUrl();
-      const isCOG = isAssetCOG(asset);
+      const isCOG = asset.isCOG();
 
       if (preferTileLayer) {
         await addTileLayer({ asset, href, isCOG, isVisual: false, key });
@@ -513,7 +453,7 @@ const stacLayer = async (data, options = {}) => {
           const georasterLayer = await createGeoRasterLayer(href, options);
           if (debugLevel >= 1) console.log("[stac-layer] successfully created layer for", asset);
           bindDataToClickEvent(georasterLayer, asset);
-          layerGroup.stac = { assets: [{ key, asset }], bands: asset?.["eo:bands"] };
+          layerGroup.stac = { assets: [{ key, asset }], bands: asset.getBands() };
           setFallback(georasterLayer, () => addTileLayer({ asset, href, isCOG, isVisual: false, key }));
           layerGroup.addLayer(georasterLayer);
           addedImagery = true;
@@ -527,7 +467,7 @@ const stacLayer = async (data, options = {}) => {
       }
     }
 
-    if (dataType === DATA_TYPES.STAC_ITEM) {
+    if (data instanceof Item) {
       if ("geometry" in data && typeof data.geometry === "object") {
         const lyr = L.geoJSON(data.geometry, {
           fillOpacity: layerGroup.getLayers().length > 0 ? 0 : 0.2,
@@ -543,7 +483,7 @@ const stacLayer = async (data, options = {}) => {
         bindDataToClickEvent(lyr);
         layerGroup.addLayer(lyr);
       }
-    } else if (dataType === DATA_TYPES.STAC_COLLECTION) {
+    } else if (data instanceof Collection) {
       const bbox = data?.extent?.spatial?.bbox;
       if (isBoundingBox(bbox)) {
         const lyr = bboxLayer(bbox, options);
@@ -565,9 +505,8 @@ const stacLayer = async (data, options = {}) => {
         layerGroup.addLayer(featureGroup);
       }
     }
-  } else if (dataType === DATA_TYPES.STAC_ASSET) {
-    const { type } = data;
-    const href = toAbsolute(data.href, baseUrl);
+  } else if (data instanceof Asset) {
+    const href = data.getAbsoluteUrl();
     let bounds;
     if (options.latLngBounds) {
       bounds = options.latLngBounds;
@@ -577,13 +516,13 @@ const stacLayer = async (data, options = {}) => {
       bounds = bboxToLatLngBounds(options.bbox);
     }
 
-    if (debugLevel >= 1) console.log("[stac-layer] visualizing " + type);
-    if (isImageType(type)) {
+    if (debugLevel >= 1) console.log("[stac-layer] visualizing " + data.type);
+    if (data.canBrowserDisplayImage()) {
       if (!bounds) {
         throw new StacLayerError(
           "LocationMissing",
-          `Can't visualize an asset of type "${type}" without a location.`,
-          {type}
+          `Can't visualize an asset of type "${data.type}" without a location.`,
+          {type: data.type}
         );
       }
 
@@ -593,7 +532,7 @@ const stacLayer = async (data, options = {}) => {
         layerGroup.addLayer(lyr);
         fillOpacity = 0;
       }
-    } else if (geotiffMediaTypes.includes(type)) {
+    } else if (data.isGeoTIFF()) {
       const addTileLayer = async () => {
         try {
           if (options.buildTileUrlTemplate) {
@@ -603,20 +542,20 @@ const stacLayer = async (data, options = {}) => {
               asset: data,
               key: null,
               stac: null,
-              isCOG: cogMediaTypes.includes(type),
+              isCOG: data.isCOG(),
               isVisual: null
             });
             if (debugLevel >= 2) console.log(`[stac-layer] built tile url template: "${tileUrlTemplate}"`);
             const tileLayerOptions = { ...options, bounds, url: href };
             const lyr = await tileLayer(tileUrlTemplate, tileLayerOptions);
-            layerGroup.stac = { assets: [{ key: null, asset: data }], bands: data?.["eo:bands"] };
+            layerGroup.stac = { assets: [{ key: null, asset: data }], bands: data.getBands() };
             bindDataToClickEvent(lyr);
             layerGroup.addLayer(lyr);
             fillOpacity = 0;
           } else if (options.tileUrlTemplate) {
             const tileLayerOptions = { bounds, ...options, url: href };
             const lyr = await tileLayer(options.tileUrlTemplate, tileLayerOptions);
-            layerGroup.stac = { assets: [{ key: null, asset: data }], bands: data?.["eo:bands"] };
+            layerGroup.stac = { assets: [{ key: null, asset: data }], bands: data.getBands() };
             bindDataToClickEvent(lyr);
             layerGroup.addLayer(lyr);
             fillOpacity = 0;
@@ -636,7 +575,7 @@ const stacLayer = async (data, options = {}) => {
               georaster,
               ...options
             });
-            layerGroup.stac = { assets: [{ key: null, asset: data }], bands: data?.["eo:bands"] };
+            layerGroup.stac = { assets: [{ key: null, asset: data }], bands: data.getBands() };
             bindDataToClickEvent(georasterLayer);
             setFallback(georasterLayer, addTileLayer);
             layerGroup.addLayer(georasterLayer);
