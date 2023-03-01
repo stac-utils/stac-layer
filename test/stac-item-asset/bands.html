@@ -27,26 +27,26 @@
       }).addTo(map);
 
 
-      const url_to_stac_item = "https://raw.githubusercontent.com/cholmes/pdd-stac/beta2/disasters/hurricane-harvey/hurricane-harvey-0831/20170831_172754_101c/20170831_172754_101c.json";
+      const data = {
+        href: window.location.origin + "/data/gadas.tif",
+        type: "application/geotiff"
+      };
 
-      fetch(url_to_stac_item).then(res => res.json()).then(async feature => {
-        const asset = feature.assets.analytic;
-        console.log("asset:", asset);
+      const searchParams = new URL(window.location.href).searchParams;
 
-        const lyr = await L.stacLayer(asset, {
-          // display only the first band (red band)
-          bands: [0, 0, 0],
-          bbox: feature.bbox,
-          debugLevel: 2,
-         });
+      if (!searchParams.has("bands")) document.location.search = "bands=2,1,0,3";
 
-        // lyr.on('click', console.log);
-
-        // lyr.addTo(map);
-        map.addLayer(lyr);
-
-        map.fitBounds(lyr.getBounds());
+      const lyr = await L.stacLayer(data, {
+        bands: searchParams.get("bands").split(/, ?/g).map(b => Number(b)),
+        debugLevel: 2,
+        resolution: 256
       });
+
+      lyr.on('click', console.log);
+
+      lyr.addTo(map);
+
+      map.fitBounds(lyr.getBounds());
     </script>
   </body>
 </html>
