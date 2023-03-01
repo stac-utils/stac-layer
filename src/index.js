@@ -11,6 +11,7 @@ import imageOverlay from "./utils/image-overlay.js";
 import tileLayer from "./utils/tile-layer.js";
 import isBoundingBox from "./utils/is-bounding-box.js";
 import getBoundingBox from "./utils/get-bounding-box.js";
+import parseAlphas from "./utils/parse-alphas.js";
 import { DATA_TYPES, EVENT_DATA_TYPES, MIME_TYPES } from "./data.js";
 import createGeoRasterLayer from "./utils/create-georaster-layer.js";
 
@@ -154,13 +155,36 @@ const stacLayer = async (data, options = {}) => {
   let assetsOption = options.assets ? options.assets : [];
   assetsOption = Array.isArray(assetsOption) ? assetsOption : [assetsOption];
 
-  let currentStats;
+  let currentStats, alphas;
   if (Array.isArray(options.bands)) {
     options = { ...options }; // shallow clone options
     options.calcStats = true;
     options.pixelValuesToColorFn = values => {
-      const { mins, ranges } = currentStats;
-      const fitted = values.map((v, i) => Math.round((255 * (v - Math.min(v, mins[i]))) / ranges[i]));
+      const { mins, maxs, ranges } = currentStats;
+      const fitted = values.map((v, i) => {
+        if (alphas[i]) {
+          const { int, min, range } = alphas[i];
+          if (int) {
+            return Math.round((255 * (v - min)) / range);
+          } else {
+            const currentMin = Math.min(v, mins[i]);
+            const currentMax = Math.max(v, maxs[i]);
+            if (currentMin >= 0 && currentMax <= 1) {
+              return Math.round(255 * v);
+            } else if (currentMin >= 0 && currentMax <= 100) {
+              return Math.round((255 * v) / 100);
+            } else if (currentMin >= 0 && currentMax <= 255) {
+              return Math.round(v);
+            } else if (currentMin === currentMax) {
+              return 255;
+            } else {
+              return Math.round((255 * (v - Math.min(v, min))) / range);
+            }
+          }
+        } else {
+          return Math.round((255 * (v - Math.min(v, mins[i]))) / ranges[i]);
+        }
+      });
       const mapped = options.bands.map(bandIndex => fitted[bandIndex]);
       const [r, g, b, a = 255] = mapped;
       return `rgba(${r},${g},${b},${a / 255})`;
@@ -361,6 +385,7 @@ const stacLayer = async (data, options = {}) => {
           const href = toAbsoluteHref(asset.href);
           try {
             const georasterLayer = await createGeoRasterLayer(href, options);
+            alphas = await parseAlphas(georasterLayer.options.georaster);
             currentStats = georasterLayer.currentStats;
             if (debugLevel >= 1) console.log("[stac-layer] successfully created layer for", asset);
             bindDataToClickEvent(georasterLayer, asset);
@@ -405,6 +430,7 @@ const stacLayer = async (data, options = {}) => {
           if (!addedImagery) {
             try {
               const georasterLayer = await createGeoRasterLayer(href, options);
+              alphas = await parseAlphas(georasterLayer.options.georaster);
               currentStats = georasterLayer.currentStats;
               bindDataToClickEvent(georasterLayer, asset);
               layerGroup.stac = { assets: [{ key, asset }], bands: asset?.["eo:bands"] };
@@ -490,6 +516,7 @@ const stacLayer = async (data, options = {}) => {
               ...options,
               debugLevel: (options.debugLevel || 1) - 1
             });
+            alphas = await parseAlphas(georasterLayer.options.georaster);
             currentStats = georasterLayer.currentStats;
             layerGroup.stac = { assets: [{ key, asset }], bands: asset?.["eo:bands"] };
             bindDataToClickEvent(georasterLayer, asset);
@@ -525,6 +552,7 @@ const stacLayer = async (data, options = {}) => {
       if (!addedImagery) {
         try {
           const georasterLayer = await createGeoRasterLayer(href, options);
+          alphas = await parseAlphas(georasterLayer.options.georaster);
           currentStats = georasterLayer.currentStats;
           if (debugLevel >= 1) console.log("[stac-layer] successfully created layer for", asset);
           bindDataToClickEvent(georasterLayer, asset);
@@ -646,6 +674,7 @@ const stacLayer = async (data, options = {}) => {
           try {
             const georasterLayer = await createGeoRasterLayer(href, options);
             const georaster = georasterLayer.options.georaster;
+            alphas = await parseAlphas(georaster);
             // save current stats object for use in pixelValuesToColorFn
             currentStats = georasterLayer.currentStats;
             layerGroup.stac = { assets: [{ key: null, asset: data }], bands: data?.["eo:bands"] };
@@ -655,6 +684,7 @@ const stacLayer = async (data, options = {}) => {
             const bbox = [georaster.xmin, georaster.ymin, georaster.xmax, georaster.ymax];
             bounds = reprojectGeoJSON(bboxPolygon(bbox), { from: georaster.projection, to: 4326 });
           } catch (error) {
+            console.log("we encountered the following error while trying create a GeoRasterLayer", error);
             if (useTileLayer) await addTileLayer();
           }
 
