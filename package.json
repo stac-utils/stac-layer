@@ -37,6 +37,7 @@
     "format": "npx prettier --arrow-parens=avoid --print-width=120 --trailing-comma=none --write src/*.js src/*/*.js",
     "test:files": "for f in $(find test | grep html); do echo \"http://localhost:8080/$f\"; done",
     "serve": "npx srvd --debug --wait=Infinity",
+    "setup": "cd data && ./setup.sh",
     "test": "echo 'no automatic tests'",
     "tiler": "docker run --env-file=./.env --name titiler -p 8000:8000 --env PORT=8000 --rm -t developmentseed/titiler"
   },
@@ -68,6 +69,7 @@
     "easy-image-loader": "^0.1.0",
     "georaster": "^1.5.5",
     "georaster-layer-for-leaflet": "^3.7.1",
+    "geotiff-epsg-code": "^0.2.0",
     "get-depth": "^0.0.3",
     "leaflet": "^1.8.0",
     "reproject-geojson": "^0.2.0",
