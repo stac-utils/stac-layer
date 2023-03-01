@@ -1,5 +1,6 @@
 import parseGeoRaster from "georaster";
 import GeoRasterLayer from "georaster-layer-for-leaflet";
+import get_epsg_code from "geotiff-epsg-code";
 import withTimeout from "./with-timeout.js";
 
 export default function createGeoRasterLayer(url, options) {
@@ -9,6 +10,17 @@ export default function createGeoRasterLayer(url, options) {
     // just in case
     if (options.debugLevel < 0) options.debugLevel = 0;
 
-    return new GeoRasterLayer({ georaster, ...options });
+    if ([undefined, null, "", 32767].includes(georaster.projection)) {
+      if (georaster._geotiff) {
+        georaster.projection = await get_epsg_code(georaster._geotiff);
+      }
+    }
+
+    const layer = new GeoRasterLayer({ georaster, ...options });
+
+    // hack to force GeoRasterLayer to calculate statistics
+    if (options.calcStats) layer.calcStats = true;
+
+    return layer;
   });
 }
