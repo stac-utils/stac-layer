@@ -27,7 +27,7 @@
       }).addTo(map);
 
 
-      const url_to_stac_collection = "https://earthengine-stac.storage.googleapis.com/catalog/LANDSAT_LC08_C01_T1_8DAY_EVI.json";
+      const url_to_stac_collection = "https://earthengine-stac.storage.googleapis.com/catalog/LANDSAT/LANDSAT_LC08_C01_T1_8DAY_EVI.json";
 
       fetch(url_to_stac_collection).then(res => res.json()).then(async collection => {
 
