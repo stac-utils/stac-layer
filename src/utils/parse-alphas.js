@@ -33,6 +33,7 @@ export default async function parseAlphas(georaster) {
 
     return [i, { int, min, range }];
   });
+  log(2, "bands in parseAlphas:", bands, image.fileDirectory);
   const alphas = bands.slice(bands.length - ExtraSamples.length);
 
   return Object.fromEntries(alphas);
