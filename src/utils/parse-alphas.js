@@ -20,20 +20,19 @@ export default async function parseAlphas(georaster) {
       range = max - min;
     } else if (sampleFormat === 2) {
       // two's complement signed integer data
-      isInteger = true;
       min = -1 * Math.pow(2, nbits - 1);
       const max = Math.pow(2, nbits - 1) - 1;
       range = max - min;
     } else if (sampleFormat === 3) {
       // IEEE floating point data
-      isInteger = false;
     } else if (SampleFormat === 4) {
       // undefined data format
     }
 
     return [i, { int, min, range }];
   });
-  const alphas = bands.slice(bands.length - ExtraSamples.length);
+  const extra = ExtraSamples ? ExtraSamples.length : 0;
+  const alphas = bands.slice(bands.length - extra);
 
   return Object.fromEntries(alphas);
 }
