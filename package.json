@@ -48,6 +48,7 @@
     "@mapbox/tilebelt": "^1.0.2",
     "@turf/boolean-point-in-polygon": "^6.5.0",
     "easy-image-loader": "^0.1.0",
+    "geojson-antimeridian-cut": "^0.1.0",
     "georaster": "^1.5.5",
     "georaster-layer-for-leaflet": "^3.7.1",
     "geotiff-epsg-code": "^0.2.0",

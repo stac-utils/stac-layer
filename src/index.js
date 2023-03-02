@@ -7,6 +7,7 @@ import { bindDataToClickEvent, enableLogging, log, registerEvents } from "./even
 import { addAsset, addDefaultGeoTiff, addThumbnails, getBounds } from "./add.js";
 import StacLayerError from "./utils/error.js";
 import { isBoundingBox, toGeoJSON } from "stac-js/src/geo.js";
+import createGeoJsonLayer from "./utils/create-geojson-layer.js";
 
 // Data must be: Catalog, Collection, Item, API Items, or API Collections
 const stacLayer = async (data, options = {}) => {
@@ -130,7 +131,7 @@ const stacLayer = async (data, options = {}) => {
   registerEvents(layerGroup);
 
   if (data.isItemCollection()) {
-    const lyr = L.geoJSON(data.toGeoJSON(), options);
+    const lyr = createGeoJsonLayer(data.toGeoJSON(), options);
     data.features.forEach(async (item) => {
       let addedImagery = false;
       if(options.displayPreview) {
@@ -189,7 +190,7 @@ const stacLayer = async (data, options = {}) => {
   }
   if (geojson) {
     log(1, "adding footprint layer");
-    let lyr = L.geoJSON(geojson, {
+    let lyr = createGeoJsonLayer(geojson, {
       fillOpacity: layerGroup.getLayers().length > 0 ? 0 : options.boundsFillOpacity,
       ...options
     });
