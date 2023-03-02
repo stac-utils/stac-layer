@@ -26,13 +26,10 @@
           attribution: '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
       }).addTo(map);
 
-
-      const url_to_stac_data = "https://landsatlook.usgs.gov/stac-server/collections/landsat-c2l1/items?page=380#7";
+      // The assets need authentication nowadays, so this will error
+      const url_to_stac_data = "https://landsatlook.usgs.gov/stac-server/collections/landsat-c2l1/items/LC08_L1TP_147019_20230225_20230301_02_T1";
       
-      fetch(url_to_stac_data).then(res => res.json()).then(async featureCollection => {
-        console.log("featureCollection:", featureCollection);
-
-        const feature = featureCollection.features.find(feature => feature.properties["landsat:wrs_row"] === "035");
+      fetch(url_to_stac_data).then(res => res.json()).then(async feature => {
         console.log("feature:", feature);
 
         const lyr = await L.stacLayer(feature, {
@@ -43,7 +40,7 @@
         });
         lyr.on('click', console.log);
         lyr.addTo(map);
-        map.fitBounds(lyr.getLayers()[0].getBounds());
+        map.fitBounds(lyr.getBounds());
       });
     </script>
   </body>
