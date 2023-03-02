@@ -35,9 +35,10 @@
 
         const lyr = await L.stacLayer(asset, {
           // display only the first band (red band)
-          bands: [0, 0, 0],
+          bands: [0],
           bbox: feature.bbox,
           debugLevel: 2,
+          resolution: 128
          });
 
         // lyr.on('click', console.log);

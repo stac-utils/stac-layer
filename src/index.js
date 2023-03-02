@@ -77,20 +77,29 @@ const stacLayer = async (data, options = {}) => {
       if (typeof asset === 'string') {
         asset = data.getAsset(asset);
         if (!(asset instanceof Asset)) {
-          log(1, "can't find asset with the given key", original);
+          log(1, "can't find asset with the given key:", original);
         }
         return asset;
       }
       if (!(asset instanceof Asset)) {
         return new Asset(asset, toAbsolute(asset.href, data.getAbsoluteUrl()), data);
       }
-      log(1, "invalid asset provided", original);
+      log(1, "invalid asset provided:", original);
       return null;
     })
     .filter(asset => asset instanceof Asset);
 
   // Compose a view for multi-bands
-  if (Array.isArray(options.bands)) {
+  if (Array.isArray(options.bands) && options.bands.length >= 1 && options.bands.length <= 4) {
+    if (options.bands.length === 1) {
+      let [g] = options.bands;
+      options.bands = [g,g,g];
+    }
+    else if (options.bands.length === 2) {
+      let [g,a] = options.bands;
+      options.bands = [g,g,g,a];
+    }
+
     options.calcStats = true;
     options.pixelValuesToColorFn = values => {
       const { mins, maxs, ranges } = options.currentStats;

@@ -56,7 +56,11 @@ The following options are supported:
 ### bands
 > array of numbers (default: undefined)
 
-An array mapping the bands to the output bands. Must be of length 3 (RGB) or 4 (RGBA).
+An array mapping the bands to the output bands. The following lengths are supported:
+- `1`: Grayscale only
+- `2`: Grayscale + Alpha
+- `3`: RGB only
+- `4`: RGB + Alpha
 
 ### baseUrl
 > string (default: the self link of the STAC entity)
