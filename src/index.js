@@ -22,7 +22,9 @@ const stacLayer = async (data, options = {}) => {
     displayOverview: true,
     debugLevel: 0,
     resolution: 32,
-    useTileLayerAsFallback: false
+    useTileLayerAsFallback: false,
+    itemStyle: {},
+    boundsStyle: {}
   }, options); // shallow clone options
 
   enableLogging(options.debugLevel);
@@ -58,10 +60,6 @@ const stacLayer = async (data, options = {}) => {
   options.useTileLayer = options.tileUrlTemplate || options.buildTileUrlTemplate;
   options.preferTileLayer = (options.useTileLayer && !options.useTileLayerAsFallback) || false;
   log(2, "preferTileLayer:", options.preferTileLayer);
-
-  // default to filling in the bounds layer unless we successfully visualize an image
-  // todo
-  options.boundsFillOpacity = options.boundsFillOpacity || 0.2;
 
   if (options.bbox && !isBoundingBox(options.bbox)) {
     log(1, 'The provided bbox is invalid');
@@ -140,7 +138,8 @@ const stacLayer = async (data, options = {}) => {
   registerEvents(layerGroup);
 
   if (data.isItemCollection()) {
-    const lyr = createGeoJsonLayer(data.toGeoJSON(), options);
+    const style = Object.assign({}, options.itemStyle, { fillOpacity: 0, weight: 1, color: '#ff8833' });
+    const lyr = createGeoJsonLayer(data.toGeoJSON(), style);
     data.features.forEach(async (item) => {
       let addedImagery = false;
       if(options.displayPreview) {
@@ -188,7 +187,13 @@ const stacLayer = async (data, options = {}) => {
   }
 
   // Add the geometry/bbox
-  let geojson = data.toGeoJSON();
+  let geojson;
+  if (data.isItemCollection() || data.isCollectionCollection()) {
+    geojson = toGeoJSON(data.getBoundingBox());
+  }
+  else {
+    geojson = data.toGeoJSON();
+  }
   if (!geojson) {
     const bounds = getBounds(data, options);
     log(2, 'No geojson found for footprint, falling back to bbox if available', bounds);
@@ -199,10 +204,9 @@ const stacLayer = async (data, options = {}) => {
   }
   if (geojson) {
     log(1, "adding footprint layer");
-    let lyr = createGeoJsonLayer(geojson, {
-      fillOpacity: layerGroup.getLayers().length > 0 ? 0 : options.boundsFillOpacity,
-      ...options
-    });
+    const fillOpacity = layerGroup.getLayers().length > 0 ? 0 : options.boundsStyle.fillOpacity;
+    const style = Object.assign({}, options.boundsStyle, { fillOpacity });
+    const lyr = createGeoJsonLayer(geojson, style);
     bindDataToClickEvent(lyr, data);
     layerGroup.addLayer(lyr);
   }

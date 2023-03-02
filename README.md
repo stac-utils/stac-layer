@@ -102,6 +102,18 @@ The higher the value the more debugging messages will be logged to the console. 
 
 Adjust the display resolution, a power of two such as 32, 64, 128 or 256. By default the value is set to render quickly, but with limited resolution. Increase this value for better resolution, but slower rendering speed (e.g., 128).
 
+### Styling
+
+#### boundsStyle
+> object (default: *Leaflet defaults, but `{fillOpacity: 0}` may be set if layers are shown inside of the bounds*)
+
+[Leaflet Path](https://leafletjs.com/reference.html#path-option) (i.e. the vector style) for the bounds / footprint of the container.
+
+#### itemStyle
+> object (default: *Leaflet default, but `{fillOpacity: 0, weight: 1, color: '#ff8833'}`*)
+
+[Leaflet Path](https://leafletjs.com/reference.html#path-option) (i.e. the vector style) for individual items of an ItemCollection.
+
 ### Display specific assets
 
 #### bbox / bounds / latLngBounds
