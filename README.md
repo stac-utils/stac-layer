@@ -106,8 +106,7 @@ Adjust the display resolution, a power of two such as 32, 64, 128 or 256. By def
 
 #### bbox / bounds / latLngBounds
 > 1. [latLngBounds](https://leafletjs.com/reference.html#latlngbounds)
-> 2. [bounds](https://leafletjs.com/reference.html#bounds)
-> 3. [West, South, East, North]
+> 2. [West, South, East, North]
 > 
 > Default: undefined
 

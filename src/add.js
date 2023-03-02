@@ -25,16 +25,16 @@ export async function addTileLayer(asset, layerGroup, options) {
         isCOG: asset.isCOG()
       });
       log(2, `built tile url template: "${tileUrlTemplate}"`);
-      const tileLayerOptions = { bounds, ...options, url: href };
-      const lyr = await tileLayer(tileUrlTemplate, tileLayerOptions);
+      const tileLayerOptions = { ...options, url: href };
+      const lyr = await tileLayer(tileUrlTemplate, bounds, tileLayerOptions);
       // todo: bands is all bands, not just the selected ones. correct?
       layerGroup.stac = { assets: [{ key, asset }], bands: asset.getBands() };
       bindDataToClickEvent(lyr, asset);
       layerGroup.addLayer(lyr);
       return lyr;
     } else if (options.tileUrlTemplate) {
-      const tileLayerOptions = { bounds, ...options, url: encodeURIComponent(href) };
-      const lyr = await tileLayer(options.tileUrlTemplate, tileLayerOptions);
+      const tileLayerOptions = { ...options, url: encodeURIComponent(href) };
+      const lyr = await tileLayer(options.tileUrlTemplate, bounds, tileLayerOptions);
       bindDataToClickEvent(lyr, asset);
       // todo: bands is all bands, not just the selected ones. correct?
       layerGroup.stac = { assets: [{ key, asset }], bands: asset.getBands() };
@@ -118,22 +118,23 @@ export async function addThumbnail(thumbnails, layerGroup, options) {
     return addThumbnail(thumbnails, layerGroup, options); // Retry with the remaining thumbnails
   }
   layerGroup.addLayer(lyr);
-  lyr.on("error", () => {
-    log(1, "create image layer errored", url);
-    layerGroup.removeLayer(lyr);
-    // todo: Returning from here doesn't work
-    return addThumbnail(thumbnails, layerGroup, options); // Retry with the remaining thumbnails
-  });
-  return lyr;
+  return new Promise((resolve, reject) => {
+    lyr.on("load", () => {
+      return resolve(lyr);
+    });
+    lyr.on("error", async () => {
+      log(1, "create image layer errored", url);
+      layerGroup.removeLayer(lyr);
+      try {
+        lyr = await addThumbnail(thumbnails, layerGroup, options); // Retry with the remaining thumbnails
+        return resolve(lyr);
+      } catch (error) {
+        reject(error);
+      }
+    });
+  })
 }
 
-/**
- * 
- * @todo
- * @param {Object} object 
- * @param {Object|null} options 
- * @returns {L.latLngBounds}
- */
 export function getBounds(object, options) {
   if (object instanceof Asset && object.getContext()) {
     let bbox = object.getContext().getBoundingBox();
@@ -144,9 +145,6 @@ export function getBounds(object, options) {
   
   if (options.latLngBounds) {
     return options.latLngBounds;
-  } else if (options.bounds) {
-    // todo: This likely is not correct
-    return L.latLngBounds(options.bounds.min, options.bounds.max);
   } else if (isBoundingBox(options.bbox)) {
     return bboxToLatLngBounds(options.bbox);
   }
