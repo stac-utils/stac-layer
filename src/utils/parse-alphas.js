@@ -1,3 +1,4 @@
+import { log } from "../events.js";
 import range from "./range.js";
 
 export default async function parseAlphas(georaster) {

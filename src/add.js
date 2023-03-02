@@ -27,6 +27,7 @@ export async function addTileLayer(asset, layerGroup, options) {
       log(2, `built tile url template: "${tileUrlTemplate}"`);
       const tileLayerOptions = { bounds, ...options, url: href };
       const lyr = await tileLayer(tileUrlTemplate, tileLayerOptions);
+      // todo: bands is all bands, not just the selected ones. correct?
       layerGroup.stac = { assets: [{ key, asset }], bands: asset.getBands() };
       bindDataToClickEvent(lyr, asset);
       layerGroup.addLayer(lyr);
@@ -35,6 +36,7 @@ export async function addTileLayer(asset, layerGroup, options) {
       const tileLayerOptions = { bounds, ...options, url: encodeURIComponent(href) };
       const lyr = await tileLayer(options.tileUrlTemplate, tileLayerOptions);
       bindDataToClickEvent(lyr, asset);
+      // todo: bands is all bands, not just the selected ones. correct?
       layerGroup.stac = { assets: [{ key, asset }], bands: asset.getBands() };
       layerGroup.addLayer(lyr);
       log(2, "added tile layer to layer group");
@@ -79,6 +81,7 @@ export async function addGeoTiff(asset, layerGroup, options) {
     options.currentStats = georasterLayer.currentStats;
     log(1, "successfully created georaster layer for", asset);
     bindDataToClickEvent(georasterLayer, asset);
+    // todo: bands is all bands, not just the selected ones. correct?
     layerGroup.stac = { assets: [{ key, asset }], bands: asset.getBands() };
     setFallback(georasterLayer, layerGroup, () => addTileLayer(asset, layerGroup, options));
     layerGroup.addLayer(georasterLayer);
