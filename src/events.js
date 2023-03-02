@@ -30,7 +30,8 @@ export function registerEvents(layerGroup) {
 }
 
 // if the given layer fails for any reason, remove it from the map, and call the fallback
-export function setFallback(lyr, fallback) {
+export function setFallback(lyr, layerGroup, fallback) {
+  // todo: doesn't work yet?
   let count = 0;
   ["tileerror"].forEach(name => {
     lyr.on(name, async evt => {

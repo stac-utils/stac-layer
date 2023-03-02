@@ -5,20 +5,24 @@ import tileLayer from './utils/tile-layer.js';
 import createGeoRasterLayer from './utils/create-georaster-layer.js';
 import parseAlphas from './utils/parse-alphas.js';
 import bboxToLatLngBounds from "./utils/bboxToLatLngBounds.js";
+import { Asset } from 'stac-js';
+import { isBoundingBox } from "stac-js/src/geo.js";
 
 export async function addTileLayer(asset, layerGroup, options) {
   try {
+    log(2, "add tile layer", asset);
     const href = asset.getAbsoluteUrl();
+    const key = asset.getKey();
+    const bounds = getBounds(asset, options);
     if (options.buildTileUrlTemplate) {
       const tileUrlTemplate = options.buildTileUrlTemplate({
         href,
         url: href,
         asset,
         key,
-        stac: data,
+        stac: asset.getContext(),
         bounds,
-        isCOG: asset.isCOG(),
-        isVisual
+        isCOG: asset.isCOG()
       });
       log(2, `built tile url template: "${tileUrlTemplate}"`);
       const tileLayerOptions = { bounds, ...options, url: href };
@@ -54,8 +58,8 @@ export async function addAsset(asset, layerGroup, options) {
 
 export async function addDefaultGeoTiff(stac, layerGroup, options) {
   const geotiff = stac.getDefaultGeoTIFF(true, !options.displayGeoTiffByDefault);
-  log(2, "add default geotiff", geotiff);
   if (geotiff) {
+    log(2, "add default geotiff", geotiff);
     return addGeoTiff(geotiff, layerGroup, options);
   }
   return null;
@@ -71,12 +75,12 @@ export async function addGeoTiff(asset, layerGroup, options) {
     const key = asset.getKey();
     log(2, "creating georaster layer for", href);
     const georasterLayer = await createGeoRasterLayer(href, options);
-    // options.alphas = await parseAlphas(georasterLayer.options.georaster);
-    // options.currentStats = georasterLayer.currentStats;
+    options.alphas = await parseAlphas(georasterLayer.options.georaster);
+    options.currentStats = georasterLayer.currentStats;
     log(1, "successfully created georaster layer for", asset);
     bindDataToClickEvent(georasterLayer, asset);
     layerGroup.stac = { assets: [{ key, asset }], bands: asset.getBands() };
-    setFallback(georasterLayer, () => addTileLayer({ asset, href, isVisual: false }));
+    setFallback(georasterLayer, layerGroup, () => addTileLayer(asset, layerGroup, options));
     layerGroup.addLayer(georasterLayer);
     return georasterLayer;
   } catch (error) {
@@ -85,18 +89,18 @@ export async function addGeoTiff(asset, layerGroup, options) {
   }
 };
 
-export default async function addThumbnails(stac, layerGroup, options) {
+export async function addThumbnails(stac, layerGroup, options) {
   const thumbnails = stac.getThumbnails(true, 'thumbnail');
   return await addThumbnail(thumbnails, layerGroup, options);
 }
 
 export async function addThumbnail(thumbnails, layerGroup, options) {
   if(thumbnails.length === 0) {
-    return;
+    return false;
   }
   const asset = thumbnails.shift(); // Try the first thumbnail
   log(2, "add thumbnail", asset);
-  const bounds = getBoundingBox(asset, options);
+  const bounds = getBounds(asset, options);
   if (!bounds) {
     throw new StacLayerError(
       "LocationMissing",
@@ -104,12 +108,15 @@ export async function addThumbnail(thumbnails, layerGroup, options) {
     );
   }
 
-  const lyr = await imageOverlay(asset.getAbsoluteUrl(), bounds, options.crossOrigin);
+  const url = asset.getAbsoluteUrl();
+  const lyr = await imageOverlay(url, bounds, options.crossOrigin);
   if (lyr === null) {
+    log(1, "image layer is null", url);
     return addThumbnail(thumbnails, layerGroup, options); // Retry with the remaining thumbnails
   }
   layerGroup.addLayer(lyr);
   lyr.on("error", () => {
+    log(1, "create image layer errored", url);
     layerGroup.removeLayer(lyr);
     // todo: Returning from here doesn't work
     return addThumbnail(thumbnails, layerGroup, options); // Retry with the remaining thumbnails
@@ -117,10 +124,17 @@ export async function addThumbnail(thumbnails, layerGroup, options) {
   return lyr;
 }
 
-export function getBoundingBox(object, options) {
+/**
+ * 
+ * @todo
+ * @param {Object} object 
+ * @param {Object|null} options 
+ * @returns {L.latLngBounds}
+ */
+export function getBounds(object, options) {
   if (object instanceof Asset && object.getContext()) {
     let bbox = object.getContext().getBoundingBox();
-    if (bbox) {
+    if (isBoundingBox(bbox)) {
       return bboxToLatLngBounds(bbox);
     }
   }
@@ -128,8 +142,9 @@ export function getBoundingBox(object, options) {
   if (options.latLngBounds) {
     return options.latLngBounds;
   } else if (options.bounds) {
-    return options.bounds;
-  } else if (options.bbox) {
+    // todo: This likely is not correct
+    return L.latLngBounds(options.bounds.min, options.bounds.max);
+  } else if (isBoundingBox(options.bbox)) {
     return bboxToLatLngBounds(options.bbox);
   }
   return null;

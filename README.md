@@ -131,21 +131,22 @@ const layer = await stacLayer(data, {
     stac, // the STAC Item or STAC Collection, if available
     bounds, // LatLngBounds of the STAC asset
     isCOG: true, // true if the asset is definitely a cloud-optimized GeoTIFF
-    isVisual: true, // true when the asset's key is "visual" (case-insensitive)
   }) => {
-    // assets has three bands of RGB, so no need to specify bands
-    if (isVisual) return "https://tiles.rdnt.io/tiles/{z}/{x}/{y}@2x?url={url}";
-
-    // select first three bands for non-visual assets, such as NAIP 4-band imagery
-    // where we might want to ignore the Near-Infrared Band
-    else return "https://tiles.rdnt.io/tiles/{z}/{x}/{y}@2x?url={url}&bands=1,2,3"
+    let bands = asset.findVisualBands();
+    if (!bands) {
+      return "https://tiles.rdnt.io/tiles/{z}/{x}/{y}@2x?url={url}";
+    }
+    else {
+      let indices = [
+        bands.red.index,
+        bands.green.index,
+        bands.blue.index
+      ].join(',');
+      return "https://tiles.rdnt.io/tiles/{z}/{x}/{y}@2x?url={url}&bands=" + indices;
+    }
   }
 });
 ```
-
-
-| `tileUrlTemplate`            | string        | undefined                                  | For server-side rendering of imagery. See the chapter [using a tiler](#using-a-tiler) and [tileUrlTemplate](#tileUrlTemplate) for details. |
-| `useTileLayerAsFallback`     | boolean       | false                                      | See the chapter [using a tiler](#using-a-tiler) and [useTileLayerAsFallback](#useTileLayerAsFallback) for details. |
 
 ### tileUrlTemplate
 > string (default: undefined)

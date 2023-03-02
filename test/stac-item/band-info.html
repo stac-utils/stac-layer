@@ -42,6 +42,7 @@
         map.fitBounds(lyr.getBounds());
         lyr.on("click", console.log);
 
+        // todo
         test("lyr.stac includes band info", ({ eq }) => {
           eq(typeof lyr.stac, "object");
           eq(lyr.stac.bands.map(band => band.common_name), ["red", "green", "blue"]);

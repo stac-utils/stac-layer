@@ -1,13 +1,19 @@
 import L from "leaflet";
 import booleanPointInPolygon from "@turf/boolean-point-in-polygon";
 
-import { default as createStacObject, STAC, Asset, Collection, Item, ItemCollection } from 'stac-js';
+import { default as createStacObject, STAC, Asset, Collection, Item, ItemCollection, Catalog } from 'stac-js';
 import { toAbsolute } from "stac-js/src/http.js";
 import { bindDataToClickEvent, enableLogging, log, registerEvents } from "./events.js";
-import addThumbnails, { addAsset, addDefaultGeoTiff } from "./add.js";
+import { addAsset, addDefaultGeoTiff, addThumbnails, getBounds } from "./add.js";
+import StacLayerError from "./utils/error.js";
+import { isBoundingBox, toGeoJSON } from "stac-js/src/geo.js";
 
 // Data must be: Catalog, Collection, Item, API Items, or API Collections
 const stacLayer = async (data, options = {}) => {
+  if (!data) {
+    throw new StacLayerError("No data provided");
+  }
+
   options = Object.assign({
     // defaults:
     displayGeoTiffByDefault: false,
@@ -22,6 +28,17 @@ const stacLayer = async (data, options = {}) => {
 
   log(1, "starting");
 
+  // Deprecated:
+  // Allow just passing assets in data as before
+  if ("href" in data) {
+    options.assets = [data];
+    data = {}; // This will result in an empty Catalog
+  }
+  else if (Array.isArray(data) && data.every(asset => "href" in asset)) {
+    options.assets = data;
+    data = {}; // This will result in an empty Catalog
+  }
+
   // Convert to stac-js and set baseUrl
   if (!(data instanceof STAC)) {
     data = createStacObject(data);
@@ -32,15 +49,27 @@ const stacLayer = async (data, options = {}) => {
   log(2, "data:", data);
   log(2, "url:", data.getAbsoluteUrl());
 
+  if (data instanceof Catalog) {
+    log(1, "Catalogs don't have spatial information, you may see an empty map");
+  }
+
   // Tile layer preferences
   options.useTileLayer = options.tileUrlTemplate || options.buildTileUrlTemplate;
   options.preferTileLayer = (options.useTileLayer && !options.useTileLayerAsFallback) || false;
   log(2, "preferTileLayer:", options.preferTileLayer);
 
   // default to filling in the bounds layer unless we successfully visualize an image
+  // todo
   options.boundsFillOpacity = options.boundsFillOpacity || 0.2;
 
+  if (options.bbox && !isBoundingBox(options.bbox)) {
+    log(1, 'The provided bbox is invalid');
+  }
+
   // Handle assets
+  if (typeof options.assets === 'string') {
+    options.assets = [options.assets];
+  }
   options.assets = (options.assets || [])
     .map(asset => {
       const original = asset;
@@ -100,16 +129,15 @@ const stacLayer = async (data, options = {}) => {
   const layerGroup = L.layerGroup();
   registerEvents(layerGroup);
 
-  if (data instanceof ItemCollection) {
+  if (data.isItemCollection()) {
     const lyr = L.geoJSON(data.toGeoJSON(), options);
     data.features.forEach(async (item) => {
-      let thumbnails = item.getThumbnails();
       let addedImagery = false;
-      if(options.displayPreview && thumbnails.length > 0) {
-        addedImagery = await addThumbnails(thumbnails, layerGroup, options);
+      if(options.displayPreview) {
+        addedImagery = await addThumbnails(item, layerGroup, options);
       }
       if (!addedImagery && options.displayOverview) {
-        await addDefaultGeoTiff(asset, layerGroup, options);
+        addedImagery = await addDefaultGeoTiff(item, layerGroup, options);
       }
     });
     // todo: This needs work to be more consistent
@@ -127,10 +155,10 @@ const stacLayer = async (data, options = {}) => {
       return e?.layer?.feature;
     });
     layerGroup.addLayer(lyr);
-  } else if (data instanceof Item || data instanceof Collection) {
+  } else if (data.isItem() || data.isCollection() || options.assets.length > 0) {
     let addedImagery = false;
     // No specific asset given by the user, visualize the default geotiff
-    if (Array.isArray(options.assets) && options.assets.length > 0) {
+    if (options.assets.length > 0) {
       log(2, "number of assets in options:", options.assets.length);
       let promises = options.assets.map(asset => addAsset(asset, layerGroup, options));
       try {
@@ -150,7 +178,15 @@ const stacLayer = async (data, options = {}) => {
   }
 
   // Add the geometry/bbox
-  const geojson = data.toGeoJSON();
+  let geojson = data.toGeoJSON();
+  if (!geojson) {
+    const bounds = getBounds(data, options);
+    log(2, 'No geojson found for footprint, falling back to bbox if available', bounds);
+    if (bounds) {
+      const bbox = [bounds.getWest(), bounds.getSouth(), bounds.getEast(), bounds.getNorth()];
+      geojson = toGeoJSON(bbox);
+    }
+  }
   if (geojson) {
     log(1, "adding footprint layer");
     let lyr = L.geoJSON(geojson, {
