@@ -36,6 +36,7 @@
         lyr.on('imageLayerAdded', console.log);
         lyr.on('fallback', console.error);
         lyr.addTo(map);
+
         map.fitBounds(lyr.getBounds());
       });
     </script>
