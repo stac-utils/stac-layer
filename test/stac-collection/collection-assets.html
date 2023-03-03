@@ -27,20 +27,39 @@
       }).addTo(map);
 
 
-      const url_to_stac_collection = "https://gist.githubusercontent.com/m-mohr/6259b2d004079a1e3dd20b1a3626434d/raw/edf831385279ae68065e2a4e0357937226716567/collection-assets.json";
+      const collection = {
+        stac_version:"1.0.0",
+        stac_extensions: [],
+        type: "Collection",
+        id: "collection-assets",
+        description: "",
+        extent: {
+          spatial: {
+            bbox: [[90.42238998815664,23.8986867088824,90.42315745854646,23.89939232968379]]
+          },
+          temporal: {
+            interval: [["2019-08-16T00:00:00+0000", "2019-08-16T00:00:00+0000"]]
+          }
+        },
+        license: "Apache-2.0",
+        links: [
+          {"rel":"self","type":"application/geo+json","href":"https://api.radiant.earth/mlhub/v1/collections/ramp_dhaka_bangladesh_source/items/ramp_dhaka_bangladesh_source_fffcd405_7b32_4451_86f7_bd38b8c25912"}
+        ],
+        assets:{
+          imagery: {"href":"https://radiantearth.blob.core.windows.net/mlhub/ramp_dhaka_bangladesh/source/fffcd405-7b32-4451-86f7-bd38b8c25912.tif","type":"image/tiff; application=geotiff","roles":["data"]}
+        }
+      };
 
-      fetch(url_to_stac_collection).then(res => res.json()).then(async collection => {
-
-        const lyr = await L.stacLayer(collection, {
-          debugLevel: 2,
-        });
-
-        lyr.on('click', console.log);
-
-        lyr.addTo(map);
-
-        map.fitBounds(lyr.getLayers()[0].getBounds());
+      const lyr = await L.stacLayer(collection, {
+        debugLevel: 2,
+        displayGeoTiffByDefault: true,
       });
+
+      lyr.on('click', console.log);
+
+      lyr.addTo(map);
+
+      map.fitBounds(lyr.getBounds());
     </script>
   </body>
 </html>
