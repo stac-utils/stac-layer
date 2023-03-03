@@ -27,7 +27,7 @@
       }).addTo(map);
 
 
-      const url_to_stac_item = "https://earthengine-stac.storage.googleapis.com/catalog/CIESIN_GPWv4_population-count.json";
+      const url_to_stac_item = "https://earthengine-stac.storage.googleapis.com/catalog/CIESIN/CIESIN_GPWv4_population-count.json";
 
       fetch(url_to_stac_item).then(res => res.json()).then(async item => {
         const lyr = await L.stacLayer(item, {
