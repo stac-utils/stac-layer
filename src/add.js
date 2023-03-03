@@ -1,22 +1,21 @@
 import { bindDataToClickEvent, log, setFallback } from "./events.js";
 import imageOverlay from "./utils/image-overlay.js";
-import tileLayer from './utils/tile-layer.js';
+import tileLayer from "./utils/tile-layer.js";
 import createGeoJsonLayer from "./utils/create-geojson-layer.js";
-import createGeoRasterLayer from './utils/create-georaster-layer.js';
-import parseAlphas from './utils/parse-alphas.js';
+import createGeoRasterLayer from "./utils/create-georaster-layer.js";
+import parseAlphas from "./utils/parse-alphas.js";
 
 export function addFootprintLayer(data, layerGroup, options) {
   // Add the geometry/bbox
   let geojson;
   if (data.isItemCollection() || data.isCollectionCollection()) {
     geojson = toGeoJSON(data.getBoundingBox());
-  }
-  else {
+  } else {
     geojson = data.toGeoJSON();
   }
   if (!geojson) {
     const bounds = getBounds(data, options);
-    log(2, 'No geojson found for footprint, falling back to bbox if available', bounds);
+    log(2, "No geojson found for footprint, falling back to bbox if available", bounds);
     if (bounds) {
       const bbox = [bounds.getWest(), bounds.getSouth(), bounds.getEast(), bounds.getNorth()];
       geojson = toGeoJSON(bbox);
@@ -75,14 +74,13 @@ export async function addTileLayer(asset, layerGroup, options) {
     log(1, "caught the following error while trying to add a tile layer:", error);
     return null;
   }
-};
+}
 
 export async function addAsset(asset, layerGroup, options) {
   log(2, "add asset", asset);
   if (asset.isGeoTIFF()) {
     return addGeoTiff(asset, layerGroup, options);
-  }
-  else {
+  } else {
     return addThumbnail([asset], layerGroup, options);
   }
 }
@@ -121,17 +119,17 @@ export async function addGeoTiff(asset, layerGroup, options) {
     log(1, "failed to create georaster layer because of the following error:", error);
     return null;
   }
-};
+}
 
 export async function addThumbnails(stac, layerGroup, options) {
   if (options.displayPreview) {
-    const thumbnails = stac.getThumbnails(true, 'thumbnail');
+    const thumbnails = stac.getThumbnails(true, "thumbnail");
     return await addThumbnail(thumbnails, layerGroup, options);
   }
 }
 
 export async function addThumbnail(thumbnails, layerGroup, options) {
-  if(thumbnails.length === 0) {
+  if (thumbnails.length === 0) {
     return null;
   }
   try {

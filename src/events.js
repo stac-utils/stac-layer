@@ -3,12 +3,12 @@ const onFallbackHandlers = [];
 let logLevel = 0;
 
 export function enableLogging(level) {
-  logLevel = typeof level === 'number' && level > 0 ? level : 0;
+  logLevel = typeof level === "number" && level > 0 ? level : 0;
 }
 
 export function log(level, ...args) {
   if (logLevel >= level) {
-    let method = args.some(e => e instanceof Error) ? 'error' : 'log';
+    let method = args.some(e => e instanceof Error) ? "error" : "log";
     console[method]("[stac-layer]", ...args);
   }
 }
@@ -53,7 +53,7 @@ export function setFallback(lyr, layerGroup, fallback) {
       }
     });
   });
-};
+}
 
 // sets up generic onClick event where a "stac" key is added to the event object
 // and is set to the provided data or the data used to create stacLayer
@@ -72,4 +72,4 @@ export function bindDataToClickEvent(lyr, what) {
       }
     });
   });
-};
+}

@@ -9,7 +9,7 @@ export default function getBounds(object, options) {
       return bboxToLatLngBounds(bbox);
     }
   }
-  
+
   if (options.latLngBounds) {
     return options.latLngBounds;
   } else if (isBoundingBox(options.bbox)) {

@@ -1,7 +1,7 @@
 import L from "leaflet";
 import booleanPointInPolygon from "@turf/boolean-point-in-polygon";
 
-import { default as createStacObject, STAC, Asset, Catalog } from 'stac-js';
+import { default as createStacObject, STAC, Asset, Catalog } from "stac-js";
 import { toAbsolute } from "stac-js/src/http.js";
 import { bindDataToClickEvent, enableLogging, log, registerEvents } from "./events.js";
 import { addAsset, addDefaultGeoTiff, addFootprintLayer, addThumbnails } from "./add.js";
@@ -13,17 +13,20 @@ const stacLayer = async (data, options = {}) => {
     throw new Error("No data provided");
   }
 
-  options = Object.assign({
-    // defaults:
-    displayGeoTiffByDefault: false,
-    displayPreview: false,
-    displayOverview: true,
-    debugLevel: 0,
-    resolution: 32,
-    useTileLayerAsFallback: false,
-    itemStyle: {},
-    boundsStyle: {}
-  }, options); // shallow clone options
+  options = Object.assign(
+    {
+      // defaults:
+      displayGeoTiffByDefault: false,
+      displayPreview: false,
+      displayOverview: true,
+      debugLevel: 0,
+      resolution: 32,
+      useTileLayerAsFallback: false,
+      itemStyle: {},
+      boundsStyle: {}
+    },
+    options
+  ); // shallow clone options
 
   enableLogging(options.debugLevel);
 
@@ -34,8 +37,7 @@ const stacLayer = async (data, options = {}) => {
   if ("href" in data) {
     options.assets = [data];
     data = {}; // This will result in an empty Catalog
-  }
-  else if (Array.isArray(data) && data.every(asset => "href" in asset)) {
+  } else if (Array.isArray(data) && data.every(asset => "href" in asset)) {
     options.assets = data;
     data = {}; // This will result in an empty Catalog
   }
@@ -60,17 +62,17 @@ const stacLayer = async (data, options = {}) => {
   log(2, "preferTileLayer:", options.preferTileLayer);
 
   if (options.bbox && !isBoundingBox(options.bbox)) {
-    log(1, 'The provided bbox is invalid');
+    log(1, "The provided bbox is invalid");
   }
 
   // Handle assets
-  if (typeof options.assets === 'string') {
+  if (typeof options.assets === "string") {
     options.assets = [options.assets];
   }
   options.assets = (options.assets || [])
     .map(asset => {
       const original = asset;
-      if (typeof asset === 'string') {
+      if (typeof asset === "string") {
         asset = data.getAsset(asset);
         if (!(asset instanceof Asset)) {
           log(1, "can't find asset with the given key:", original);
@@ -89,11 +91,10 @@ const stacLayer = async (data, options = {}) => {
   if (Array.isArray(options.bands) && options.bands.length >= 1 && options.bands.length <= 4) {
     if (options.bands.length === 1) {
       let [g] = options.bands;
-      options.bands = [g,g,g];
-    }
-    else if (options.bands.length === 2) {
-      let [g,a] = options.bands;
-      options.bands = [g,g,g,a];
+      options.bands = [g, g, g];
+    } else if (options.bands.length === 2) {
+      let [g, a] = options.bands;
+      options.bands = [g, g, g, a];
     }
 
     options.calcStats = true;
@@ -138,14 +139,13 @@ const stacLayer = async (data, options = {}) => {
   let promises = [];
 
   if (data.isItemCollection()) {
-    const style = Object.assign({}, options.itemStyle, { fillOpacity: 0, weight: 1, color: '#ff8833' });
+    const style = Object.assign({}, options.itemStyle, { fillOpacity: 0, weight: 1, color: "#ff8833" });
     const lyr = createGeoJsonLayer(data.toGeoJSON(), style);
     promises = data.features.map(item => {
-     return addThumbnails(item, layerGroup, options)
-     .then(layer => {
-       if (!layer) {
-        return addDefaultGeoTiff(item, layerGroup, options);
-       }
+      return addThumbnails(item, layerGroup, options).then(layer => {
+        if (!layer) {
+          return addDefaultGeoTiff(item, layerGroup, options);
+        }
       });
     });
     // todo: This needs work to be more consistent
@@ -168,15 +168,13 @@ const stacLayer = async (data, options = {}) => {
     if (options.assets.length > 0) {
       log(2, "number of assets in options:", options.assets.length);
       promises = options.assets.map(asset => addAsset(asset, layerGroup, options));
-    }
-    else {
+    } else {
       promises.push(
-        addDefaultGeoTiff(data, layerGroup, options)
-          .then(layer => {
-            if (!layer) {
-              return addThumbnails(data, layerGroup, options);
-            }
-          })
+        addDefaultGeoTiff(data, layerGroup, options).then(layer => {
+          if (!layer) {
+            return addThumbnails(data, layerGroup, options);
+          }
+        })
       );
     }
   }
@@ -187,7 +185,10 @@ const stacLayer = async (data, options = {}) => {
   layerGroup.getBounds = () => {
     const lyr = layerGroup.getLayers().find(lyr => lyr.toGeoJSON);
     if (!lyr) {
-      log(1, "unable to get bounds without a vector layer. This often happens when there was an issue determining the bounding box of the provided data.");
+      log(
+        1,
+        "unable to get bounds without a vector layer. This often happens when there was an issue determining the bounding box of the provided data."
+      );
       return;
     }
     const bounds = lyr.getBounds();

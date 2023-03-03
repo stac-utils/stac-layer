@@ -1,4 +1,4 @@
-import splitGeoJSON from 'geojson-antimeridian-cut';
+import splitGeoJSON from "geojson-antimeridian-cut";
 
 export default function createGeoJsonLayer(geojson, style) {
   geojson = splitGeoJSON(geojson);
