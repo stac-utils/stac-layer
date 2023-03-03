@@ -25,7 +25,8 @@ const map = L.map('map');
 // set options for the STAC layer
 const options = {
   // see table below for supported options, for example:
-  resolution: 128
+  resolution: 128,
+  map
 };
 
 const data = fetch('https://example.com/stac/item.json')
@@ -33,11 +34,10 @@ const data = fetch('https://example.com/stac/item.json')
 // create layer
 const layer = await stacLayer(data, options);
 
-// add layer to map
-layer.addTo(map);
-
-// fit map to layer
-map.fitBounds(layer.getBounds());
+// if the map option has not been provided:
+// add layer to map and fit map to layer 
+// layer.addTo(map);
+// map.fitBounds(layer.getBounds());
 ```
 
 ## Parameters
@@ -52,6 +52,13 @@ you can project a [stac-js](https://github.com/m-mohr/stac-js) object.
 
 The second parameter `options` allows to customize stac-layer.
 The following options are supported:
+
+### assets
+> array of objects or strings (default: undefined)
+
+If you want to show specific assets, provide them as an array here.
+The array can contain either the asset keys (as strings) or asset objects (plain or stac.js).
+Passing assets via this option will override `displayPreview` and `displayOverview`.
 
 ### bands
 > array of numbers (default: undefined)
@@ -96,6 +103,13 @@ For performance reasons, it is recommended to disable this option if you pass in
 > boolean (default: 0)
 
 The higher the value the more debugging messages will be logged to the console. `0` to disable logging.
+
+### map
+> Leaflet map (default: undefined)
+
+Provide the Leaflet map object to add the layer to.
+Provising a map also fits the bounds automatically to the bounding box / geometry of the given data.
+This is a faster alternative to do the same steps yourself because it can start before the imagery is loaded.
 
 ### resolution
 > integer (default: 32)

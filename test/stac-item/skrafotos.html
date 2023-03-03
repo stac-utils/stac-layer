@@ -29,10 +29,8 @@
       const url_to_stac_item= "https://api.dataforsyningen.dk/skraafoto_api/v1.0/collections/skraafotos2021/items/2021_82_20_1_0001_00005355?token=6f27c9754e42e3ded6042f804203579b";
 
       fetch(url_to_stac_item).then(res => res.json()).then(async feature => {
-        const lyr = await L.stacLayer(feature, { debugLevel: 2 });
+        const lyr = await L.stacLayer(feature, { debugLevel: 2, map });
         lyr.on('click', console.log);
-        lyr.addTo(map);
-        map.fitBounds(lyr.getBounds());
       });
     </script>
   </body>

@@ -5,13 +5,12 @@ import { default as createStacObject, STAC, Asset, Catalog } from 'stac-js';
 import { toAbsolute } from "stac-js/src/http.js";
 import { bindDataToClickEvent, enableLogging, log, registerEvents } from "./events.js";
 import { addAsset, addDefaultGeoTiff, addFootprintLayer, addThumbnails } from "./add.js";
-import StacLayerError from "./utils/error.js";
 import { isBoundingBox } from "stac-js/src/geo.js";
 
 // Data must be: Catalog, Collection, Item, API Items, or API Collections
 const stacLayer = async (data, options = {}) => {
   if (!data) {
-    throw new StacLayerError("No data provided");
+    throw new Error("No data provided");
   }
 
   options = Object.assign({
@@ -136,17 +135,18 @@ const stacLayer = async (data, options = {}) => {
   const layerGroup = L.layerGroup();
   registerEvents(layerGroup);
 
+  let promises = [];
+
   if (data.isItemCollection()) {
     const style = Object.assign({}, options.itemStyle, { fillOpacity: 0, weight: 1, color: '#ff8833' });
     const lyr = createGeoJsonLayer(data.toGeoJSON(), style);
-    data.features.forEach(async (item) => {
-      let addedImagery = false;
-      if(options.displayPreview) {
-        addedImagery = await addThumbnails(item, layerGroup, options);
-      }
-      if (!addedImagery && options.displayOverview) {
-        addedImagery = await addDefaultGeoTiff(item, layerGroup, options);
-      }
+    promises = data.features.map(item => {
+     return addThumbnails(item, layerGroup, options)
+     .then(layer => {
+       if (!layer) {
+        return addDefaultGeoTiff(item, layerGroup, options);
+       }
+      });
     });
     // todo: This needs work to be more consistent
     bindDataToClickEvent(lyr, e => {
@@ -164,24 +164,20 @@ const stacLayer = async (data, options = {}) => {
     });
     layerGroup.addLayer(lyr);
   } else if (data.isItem() || data.isCollection() || options.assets.length > 0) {
-    let addedImagery = false;
     // No specific asset given by the user, visualize the default geotiff
     if (options.assets.length > 0) {
       log(2, "number of assets in options:", options.assets.length);
-      let promises = options.assets.map(asset => addAsset(asset, layerGroup, options));
-      try {
-        await Promise.all(promises);
-        addedImagery = true;
-      } catch (error) {
-        log(1, error);
-      }
+      promises = options.assets.map(asset => addAsset(asset, layerGroup, options));
     }
-    if (!addedImagery && options.displayOverview) {
-      addedImagery = await addDefaultGeoTiff(data, layerGroup, options);
-    }
-    // No specific asset given by the user, no default geotiff found, visualize a thumbnail
-    if (!addedImagery && options.displayPreview) {
-      addedImagery = await addThumbnails(data, layerGroup, options);
+    else {
+      promises.push(
+        addDefaultGeoTiff(data, layerGroup, options)
+          .then(layer => {
+            if (!layer) {
+              return addThumbnails(data, layerGroup, options);
+            }
+          })
+      );
     }
   }
 
@@ -205,6 +201,13 @@ const stacLayer = async (data, options = {}) => {
   if (!layerGroup.options) layerGroup.options = {};
 
   layerGroup.options.debugLevel = options.debugLevel;
+
+  if (options.map) {
+    options.map.addLayer(layerGroup);
+    options.map.fitBounds(layerGroup.getBounds());
+  }
+
+  await Promise.all(promises);
 
   return layerGroup;
 };

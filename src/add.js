@@ -1,13 +1,9 @@
 import { bindDataToClickEvent, log, setFallback } from "./events.js";
-import StacLayerError from "./utils/error.js";
 import imageOverlay from "./utils/image-overlay.js";
 import tileLayer from './utils/tile-layer.js';
 import createGeoJsonLayer from "./utils/create-geojson-layer.js";
 import createGeoRasterLayer from './utils/create-georaster-layer.js';
 import parseAlphas from './utils/parse-alphas.js';
-import bboxToLatLngBounds from "./utils/bboxToLatLngBounds.js";
-import { Asset } from 'stac-js';
-import { isBoundingBox } from "stac-js/src/geo.js";
 
 export function addFootprintLayer(data, layerGroup, options) {
   // Add the geometry/bbox
@@ -92,10 +88,12 @@ export async function addAsset(asset, layerGroup, options) {
 }
 
 export async function addDefaultGeoTiff(stac, layerGroup, options) {
-  const geotiff = stac.getDefaultGeoTIFF(true, !options.displayGeoTiffByDefault);
-  if (geotiff) {
-    log(2, "add default geotiff", geotiff);
-    return addGeoTiff(geotiff, layerGroup, options);
+  if (options.displayOverview) {
+    const geotiff = stac.getDefaultGeoTIFF(true, !options.displayGeoTiffByDefault);
+    if (geotiff) {
+      log(2, "add default geotiff", geotiff);
+      return addGeoTiff(geotiff, layerGroup, options);
+    }
   }
   return null;
 }
@@ -126,60 +124,45 @@ export async function addGeoTiff(asset, layerGroup, options) {
 };
 
 export async function addThumbnails(stac, layerGroup, options) {
-  const thumbnails = stac.getThumbnails(true, 'thumbnail');
-  return await addThumbnail(thumbnails, layerGroup, options);
+  if (options.displayPreview) {
+    const thumbnails = stac.getThumbnails(true, 'thumbnail');
+    return await addThumbnail(thumbnails, layerGroup, options);
+  }
 }
 
 export async function addThumbnail(thumbnails, layerGroup, options) {
   if(thumbnails.length === 0) {
-    return false;
+    return null;
   }
-  const asset = thumbnails.shift(); // Try the first thumbnail
-  log(2, "add thumbnail", asset);
-  const bounds = getBounds(asset, options);
-  if (!bounds) {
-    throw new StacLayerError(
-      "LocationMissing",
-      "Can't visualize an asset without a location."
-    );
-  }
-
-  const url = asset.getAbsoluteUrl();
-  const lyr = await imageOverlay(url, bounds, options.crossOrigin);
-  if (lyr === null) {
-    log(1, "image layer is null", url);
-    return addThumbnail(thumbnails, layerGroup, options); // Retry with the remaining thumbnails
-  }
-  layerGroup.addLayer(lyr);
-  return new Promise((resolve, reject) => {
-    lyr.on("load", () => {
-      return resolve(lyr);
-    });
-    lyr.on("error", async () => {
-      log(1, "create image layer errored", url);
-      layerGroup.removeLayer(lyr);
-      try {
-        lyr = await addThumbnail(thumbnails, layerGroup, options); // Retry with the remaining thumbnails
-        return resolve(lyr);
-      } catch (error) {
-        reject(error);
-      }
-    });
-  })
-}
-
-export function getBounds(object, options) {
-  if (object instanceof Asset && object.getContext()) {
-    let bbox = object.getContext().getBoundingBox();
-    if (isBoundingBox(bbox)) {
-      return bboxToLatLngBounds(bbox);
+  try {
+    const asset = thumbnails.shift(); // Try the first thumbnail
+    log(2, "add thumbnail", asset);
+    const bounds = getBounds(asset, options);
+    if (!bounds) {
+      log(1, "Can't visualize an asset without a location.");
+      return null;
     }
+
+    const url = asset.getAbsoluteUrl();
+    const lyr = await imageOverlay(url, bounds, options.crossOrigin);
+    if (lyr === null) {
+      log(1, "image layer is null", url);
+      return addThumbnail(thumbnails, layerGroup, options); // Retry with the remaining thumbnails
+    }
+    layerGroup.addLayer(lyr);
+    return await new Promise(resolve => {
+      lyr.on("load", () => {
+        return resolve(lyr);
+      });
+      lyr.on("error", async () => {
+        log(1, "create image layer errored", url);
+        layerGroup.removeLayer(lyr);
+        const otherLyr = await addThumbnail(thumbnails, layerGroup, options); // Retry with the remaining thumbnails
+        return resolve(otherLyr);
+      });
+    });
+  } catch (error) {
+    log(1, "failed to create image layer because of the following error:", error);
+    return null;
   }
-  
-  if (options.latLngBounds) {
-    return options.latLngBounds;
-  } else if (isBoundingBox(options.bbox)) {
-    return bboxToLatLngBounds(options.bbox);
-  }
-  return null;
 }
