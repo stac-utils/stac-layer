@@ -1,3 +1,4 @@
+import reprojectBoundingBox from "reproject-bbox";
 import { bindDataToClickEvent, log, setFallback, triggerEvent } from "./events.js";
 import imageOverlay from "./utils/image-overlay.js";
 import tileLayer from "./utils/tile-layer.js";
@@ -6,9 +7,9 @@ import getBounds from "./utils/get-bounds.js";
 import parseAlphas from "./utils/parse-alphas.js";
 import { toGeoJSON } from "stac-js/src/geo.js";
 
-export function addFootprintLayer(data, layerGroup, options) {
+function getGeoJson(data, options) {
   // Add the geometry/bbox
-  let geojson;
+  let geojson = null;
   if (data.isItemCollection() || data.isCollectionCollection()) {
     geojson = toGeoJSON(data.getBoundingBox());
   } else {
@@ -22,6 +23,11 @@ export function addFootprintLayer(data, layerGroup, options) {
       geojson = toGeoJSON(bbox);
     }
   }
+  return geojson;
+}
+
+export function addFootprintLayer(data, layerGroup, options, bbox = null) {
+  let geojson = bbox ? toGeoJSON(bbox) : getGeoJson(data, options);
   if (geojson) {
     log(1, "adding footprint layer");
     let style = {};
@@ -32,6 +38,7 @@ export function addFootprintLayer(data, layerGroup, options) {
     const layer = L.geoJSON(geojson, style);
     bindDataToClickEvent(layer, data);
     layerGroup.addLayer(layer);
+    layerGroup.footprintLayer = layer;
     triggerEvent("boundsLayerAdded", { layer, geojson }, layerGroup);
     return layer;
   }
@@ -105,12 +112,18 @@ export async function addGeoTiff(asset, layerGroup, options) {
     const href = asset.getAbsoluteUrl();
     log(2, "creating georaster layer for", href);
     const layer = await createGeoRasterLayer(href, options);
-    options.alphas = await parseAlphas(layer.options.georaster);
+    const georaster = layer.options.georaster;
+    options.alphas = await parseAlphas(georaster);
     options.currentStats = layer.currentStats;
     log(1, "successfully created georaster layer for", asset);
     bindDataToClickEvent(layer, asset);
     setFallback(layer, layerGroup, () => addTileLayer(asset, layerGroup, options));
     layerGroup.addLayer(layer);
+    if (!layerGroup.footprintLayer) {
+      let bbox = [georaster.xmin, georaster.ymin, georaster.xmax, georaster.ymax];
+      bbox = reprojectBoundingBox(bbox, { from: georaster.projection, to: 4326 });
+      addFootprintLayer(asset, layerGroup, options, bbox);
+    }
     triggerEvent("imageLayerAdded", { type: "overview", layer, asset }, layerGroup);
     return layer;
   } catch (error) {

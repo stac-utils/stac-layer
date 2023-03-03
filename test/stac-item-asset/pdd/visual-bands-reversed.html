@@ -37,12 +37,9 @@
           debugLevel: 2,
           resolution: 256
         });
-
         lyr.on('click', console.log);
-
+        lyr.on('addBoundsLayer', () => map.fitBounds(lyr.getBounds()));
         lyr.addTo(map);
-
-        map.fitBounds(lyr.getBounds());
       });
     </script>
   </body>

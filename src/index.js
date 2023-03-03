@@ -3,7 +3,15 @@ import booleanPointInPolygon from "@turf/boolean-point-in-polygon";
 
 import { default as createStacObject, STAC, Asset, Catalog } from "stac-js";
 import { toAbsolute } from "stac-js/src/http.js";
-import { bindDataToClickEvent, enableLogging, flushEventQueue, log, logPromise, registerEvents, triggerEvent } from "./events.js";
+import {
+  bindDataToClickEvent,
+  enableLogging,
+  flushEventQueue,
+  log,
+  logPromise,
+  registerEvents,
+  triggerEvent
+} from "./events.js";
 import { addAsset, addDefaultGeoTiff, addFootprintLayer, addThumbnails } from "./add.js";
 import { isBoundingBox } from "stac-js/src/geo.js";
 
@@ -173,8 +181,7 @@ const stacLayer = (data, options = {}) => {
       let data = e?.layer?.feature;
       if (!data) {
         return null;
-      }
-      else if (!(data instanceof STAC)) {
+      } else if (!(data instanceof STAC)) {
         data = createStacObject(data);
       }
       return {
@@ -221,16 +228,14 @@ const stacLayer = (data, options = {}) => {
   layerGroup.bringToFront = () => layerGroup.getLayers().forEach(layer => layer.bringToFront());
   layerGroup.bringToBack = () => layerGroup.getLayers().forEach(layer => layer.bringToBack());
 
-  layerGroup.on('add', () => {
+  layerGroup.on("add", () => {
     layerGroup.orphan = false;
     flushEventQueue();
   });
-  layerGroup.on('remove', () => layerGroup.orphan = true);
+  layerGroup.on("remove", () => (layerGroup.orphan = true));
 
   Promise.all(promises)
-    .then(() =>
-      triggerEvent("loaded", { data }, layerGroup)
-    )
+    .then(() => triggerEvent("loaded", { data }, layerGroup))
     .catch(logPromise);
 
   return layerGroup;

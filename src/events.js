@@ -48,7 +48,7 @@ export function flushEventQueue() {
 export function triggerEvent(name, data, layerGroup = null) {
   // Layer has not been added to map yet, queue events for later
   if (layerGroup && layerGroup.orphan) {
-    queue.push({name, data});
+    queue.push({ name, data });
     return;
   }
   eventHandlers[name].forEach(callback => {
@@ -84,10 +84,9 @@ export function setFallback(lyr, layerGroup, fallback) {
 // and is set to the provided data or the data used to create stacLayer
 export function bindDataToClickEvent(lyr, data) {
   lyr.on("click", evt => {
-    if (typeof data === 'function') {
+    if (typeof data === "function") {
       evt.stac = data(evt);
-    }
-    else {
+    } else {
       evt.stac = {
         data,
         type: data.getObjectType()
