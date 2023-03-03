@@ -1,13 +1,12 @@
 import L from "leaflet";
 import booleanPointInPolygon from "@turf/boolean-point-in-polygon";
 
-import { default as createStacObject, STAC, Asset, Collection, Item, ItemCollection, Catalog } from 'stac-js';
+import { default as createStacObject, STAC, Asset, Catalog } from 'stac-js';
 import { toAbsolute } from "stac-js/src/http.js";
 import { bindDataToClickEvent, enableLogging, log, registerEvents } from "./events.js";
-import { addAsset, addDefaultGeoTiff, addThumbnails, getBounds } from "./add.js";
+import { addAsset, addDefaultGeoTiff, addFootprintLayer, addThumbnails } from "./add.js";
 import StacLayerError from "./utils/error.js";
-import { isBoundingBox, toGeoJSON } from "stac-js/src/geo.js";
-import createGeoJsonLayer from "./utils/create-geojson-layer.js";
+import { isBoundingBox } from "stac-js/src/geo.js";
 
 // Data must be: Catalog, Collection, Item, API Items, or API Collections
 const stacLayer = async (data, options = {}) => {
@@ -186,30 +185,7 @@ const stacLayer = async (data, options = {}) => {
     }
   }
 
-  // Add the geometry/bbox
-  let geojson;
-  if (data.isItemCollection() || data.isCollectionCollection()) {
-    geojson = toGeoJSON(data.getBoundingBox());
-  }
-  else {
-    geojson = data.toGeoJSON();
-  }
-  if (!geojson) {
-    const bounds = getBounds(data, options);
-    log(2, 'No geojson found for footprint, falling back to bbox if available', bounds);
-    if (bounds) {
-      const bbox = [bounds.getWest(), bounds.getSouth(), bounds.getEast(), bounds.getNorth()];
-      geojson = toGeoJSON(bbox);
-    }
-  }
-  if (geojson) {
-    log(1, "adding footprint layer");
-    const fillOpacity = layerGroup.getLayers().length > 0 ? 0 : options.boundsStyle.fillOpacity;
-    const style = Object.assign({}, options.boundsStyle, { fillOpacity });
-    const lyr = createGeoJsonLayer(geojson, style);
-    bindDataToClickEvent(lyr, data);
-    layerGroup.addLayer(lyr);
-  }
+  addFootprintLayer(data, layerGroup, options);
 
   // use the extent of the vector layer
   layerGroup.getBounds = () => {

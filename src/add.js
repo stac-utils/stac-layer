@@ -2,11 +2,44 @@ import { bindDataToClickEvent, log, setFallback } from "./events.js";
 import StacLayerError from "./utils/error.js";
 import imageOverlay from "./utils/image-overlay.js";
 import tileLayer from './utils/tile-layer.js';
+import createGeoJsonLayer from "./utils/create-geojson-layer.js";
 import createGeoRasterLayer from './utils/create-georaster-layer.js';
 import parseAlphas from './utils/parse-alphas.js';
 import bboxToLatLngBounds from "./utils/bboxToLatLngBounds.js";
 import { Asset } from 'stac-js';
 import { isBoundingBox } from "stac-js/src/geo.js";
+
+export function addFootprintLayer(data, layerGroup, options) {
+  // Add the geometry/bbox
+  let geojson;
+  if (data.isItemCollection() || data.isCollectionCollection()) {
+    geojson = toGeoJSON(data.getBoundingBox());
+  }
+  else {
+    geojson = data.toGeoJSON();
+  }
+  if (!geojson) {
+    const bounds = getBounds(data, options);
+    log(2, 'No geojson found for footprint, falling back to bbox if available', bounds);
+    if (bounds) {
+      const bbox = [bounds.getWest(), bounds.getSouth(), bounds.getEast(), bounds.getNorth()];
+      geojson = toGeoJSON(bbox);
+    }
+  }
+  if (geojson) {
+    log(1, "adding footprint layer");
+    let style = {};
+    if (layerGroup.getLayers().length > 0) {
+      style.fillOpacity = 0;
+    }
+    style = Object.assign({}, options.boundsStyle, style);
+    const lyr = createGeoJsonLayer(geojson, style);
+    bindDataToClickEvent(lyr, data);
+    layerGroup.addLayer(lyr);
+    return lyr;
+  }
+  return null;
+}
 
 export async function addTileLayer(asset, layerGroup, options) {
   try {
