@@ -30,9 +30,9 @@
       const url_to_stac_item = "https://www.planet.com/data/stac/disasters/hurricane-harvey/hurricane-harvey-0831/20170831_172754_101c/20170831_172754_101c.json";
 
       fetch(url_to_stac_item).then(res => res.json()).then(async item => {
-        const lyr = await L.stacLayer(item, { debugLevel: 2 });
-        console.log("lyr.stac:", lyr.stac);
+        const lyr = L.stacLayer(item, { debugLevel: 2 });
         lyr.on('click', console.log);
+        lyr.on('loaded', console.log);
         lyr.addTo(map);
         map.fitBounds(lyr.getBounds());
       });

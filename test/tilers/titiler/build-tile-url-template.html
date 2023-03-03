@@ -44,7 +44,7 @@
             return "https://tiles.rdnt.io/tiles/{z}/{x}/{y}@2x?url={url}&bands=" + indices;
           }
         };
-        const lyr = await L.stacLayer(feature, { buildTileUrlTemplate, debugLevel: 2 });
+        const lyr = L.stacLayer(feature, { buildTileUrlTemplate, debugLevel: 2 });
         lyr.addTo(map);
         lyr.on('click', console.log);
         map.fitBounds(lyr.getBounds());

@@ -33,7 +33,7 @@
         const asset = feature.assets.analytic;
         console.log("asset:", asset);
 
-        const lyr = await L.stacLayer(asset, {
+        const lyr = L.stacLayer(asset, {
           // display only the first band (red band)
           bands: [0],
           bbox: feature.bbox,

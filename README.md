@@ -32,7 +32,7 @@ const options = {
 const data = fetch('https://example.com/stac/item.json')
 
 // create layer
-const layer = await stacLayer(data, options);
+const layer = stacLayer(data, options);
 
 // if the map option has not been provided:
 // add layer to map and fit map to layer 
@@ -104,13 +104,6 @@ For performance reasons, it is recommended to disable this option if you pass in
 
 The higher the value the more debugging messages will be logged to the console. `0` to disable logging.
 
-### map
-> Leaflet map (default: undefined)
-
-Provide the Leaflet map object to add the layer to.
-Provising a map also fits the bounds automatically to the bounding box / geometry of the given data.
-This is a faster alternative to do the same steps yourself because it can start before the imagery is loaded.
-
 ### resolution
 > integer (default: 32)
 
@@ -152,7 +145,7 @@ If you need more dynamic customization, consider passing in a `buildTileUrlTempl
 type of asset.
 
 ```js
-const layer = await stacLayer(data, {
+const layer = stacLayer(data, {
   buildTileUrlTemplate: ({
     href, // the url to the GeoTIFF
     asset, // the STAC Asset object
@@ -183,7 +176,7 @@ const layer = await stacLayer(data, {
 You can set `tileUrlTemplate`, which will be passed to Leaflet's [TileLayer](https://leafletjs.com/reference-1.7.1.html#tilelayer). This will apply to whichever asset stac-layer chooses as the best GeoTIFF for visualization.
 ```js
 // a STAC Feature
-const layer = await stacLayer(data, {
+const layer = stacLayer(data, {
   tileUrlTemplate: "https://tiles.rdnt.io/tiles/{z}/{x}/{y}@2x?url={url}"
 });
 ```
@@ -195,100 +188,88 @@ Enables server-side rendering of imagery in case an error has happened on the cl
 If you'd like to only use a tiler if [GeoRasterLayer](https://github.com/geotiff/georaster-layer-for-leaflet) fails, set `useTileLayerAsFallback` to `true`.
 
 ```js
-const layer = await stacLayer(data, {
+const layer = stacLayer(data, {
   tileUrlTemplate: "https://tiles.rdnt.io/tiles/{z}/{x}/{y}@2x?url={url}",
   useTileLayerAsFallback: true
 });
 ```
 
-## listening to click events
-STAC Layer added a "stac" property to Leaflet's onClick events that include the STAC information of what the user clicked.  It can be a STAC collection, feature, asset, or even an array of assets when a composite of multiple assets are being visualized.
+## Events
+
+## `click`: listening to click events
+
+STAC Layer added a "stac" property to Leaflet's onClick events that include the STAC information of what the user clicked. It can be a STAC collection, feature, asset, or even an array of assets when a composite of multiple assets are being visualized.
+
 ```js
 const featureCollection = ....; // a GeoJSON Feature Collection of STAC Features
 
-const layer = await stacLayer(featureCollection);
-layer.on("click", e => {
-  const { type, data } = e.stac;
-  // type is one of "Collection", "Feature", "Assets", or "Asset"
+const layer = stacLayer(featureCollection);
+layer.on("click", event => {
+  const { type, data } = event.stac;
+  // type is one of "Collection", "CollectionCollection", "Feature", "FeatureCollection" or "Asset"
   // data is the item that was clicked in the collection
 });
 ```
 
-## accessing meta information
+## `loaded`: once all imagery is shown
+
 Sometimes you might like to know information about what is being visualized.
-You can access this information through the `stac` key attached to the layer.
+You can access this information through the `loaded` event.
+
 ```js
-const layer = await stacLayer(data, options);
-```
-`layer.stac` could be the following
-```js
-{
-  "assets": [
-    {
-      "key": "visual",
-      "asset": {
-        "href": "https://storage.googleapis.com/open-cogs/stac-examples/20201211_223832_CS2.tif",
-        "type": "image/tiff; application=geotiff; profile=cloud-optimized",
-        "title": "3-Band Visual",
-        "roles": [
-          "visual"
-        ],
-        "eo:bands": [
-          {
-            "name": "band3",
-            "common_name": "red",
-            "center_wavelength": 645,
-            "full_width_half_max": 90
-          },
-          {
-            "name": "band2",
-            "common_name": "green",
-            "center_wavelength": 560,
-            "full_width_half_max": 80
-          },
-          {
-            "name": "band1",
-            "common_name": "blue",
-            "center_wavelength": 470,
-            "full_width_half_max": 70
-          }
-        ]
-      }
-    }
-  ],
-  "bands": [
-    {
-      "name": "band3",
-      "common_name": "red",
-      "center_wavelength": 645,
-      "full_width_half_max": 90
-    },
-    {
-      "name": "band2",
-      "common_name": "green",
-      "center_wavelength": 560,
-      "full_width_half_max": 80
-    },
-    {
-      "name": "band1",
-      "common_name": "blue",
-      "center_wavelength": 470,
-      "full_width_half_max": 70
-    }
-  ]
-}
+const layer = stacLayer(data, options);
+layer.on("loaded", event => {
+  const { data, geojson, boundsLayer } = event;
+  // data is the stac-js object shown
+  // boundsLayer is a Leaflet layer object for the bounds
+  // geojson can be a GeoJSON object of the bounds
+});
 ```
 
-## listening to fallback events
-STAC Layer fires a custom "fallback" event when an error occurs rendering
-with GeoRasterLayer and it falls back to trying to use a tiler
+## `imageLayerAdded`: once a new image layer is added
+
+Whenever a new layer with imagery is added to the map.
+Helps to get information about which data is being visualized.
+Has parameters: `type`, `layer`, `asset`
+
+Multiple types are possible:
+- `tilelayer` A tile server layer. 
+- `overview` Overview imagery layer, usually a GeoTiff or COG.
+- `preview` Preview imagery layer, usually a thumbnail in a browser-supported format such as PNG or JPEG.
+
 ```js
-const layer = await stacLayer(data, options);
+const layer = stacLayer(data, options);
+layer.on("imageLayerAdded", event => {
+  const { type, layer, asset } = event;
+  // type is the type of the layer
+  // layer is the Leaflet layer object
+  // asset can be a stac-js asset object
+});
+```
+
+## `boundsLayerAdded`: once a new bounds layer is added
+
+Once the layer with the bbox / geometry is added to the map.
+Helps to get information about which data is being visualized.
+
+```js
+const layer = stacLayer(data, options);
+layer.on("boundsLayerAdded", event => {
+  const { layer, geojson } = event;
+  // layer is the Leaflet layer object
+  // geojson is a GeoJSON object of the bbox / geometry
+});
+```
+
+## `fallback`: listening to fallback events
+
+STAC Layer fires a custom "fallback" event when an error occurs rendering
+with GeoRasterLayer and it falls back to trying to use a tiler.
+
+```js
+const layer = stacLayer(data, options);
 layer.on("fallback", event => {
   // event.error is the initial LeafletJS error event
   // that triggered the fallback
-
-  // layer.stac metadata may change after fallback
-  // so good to check again now
 });
 ```

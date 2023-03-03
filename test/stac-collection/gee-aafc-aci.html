@@ -31,15 +31,14 @@
 
       fetch(url_to_stac_collection).then(res => res.json()).then(async collection => {
 
-        const lyr = await L.stacLayer(collection, {
-          debugLevel: 2,
-        });
-
+        const lyr = L.stacLayer(collection, { debugLevel: 2 });
         lyr.on('click', console.log);
-
+        lyr.on('loaded', console.log);
+        lyr.on('imageLayerAdded', console.log);
         lyr.addTo(map);
-
-        map.fitBounds(lyr.getBounds());
+        map.fitBounds(lyr.getBounds({
+          padding: [10,10]
+        }));
       });
     </script>
   </body>

@@ -30,7 +30,7 @@
       const url_to_stac_item = "https://s3-us-west-2.amazonaws.com/usgs-lidar-stac/ept/AK_BrooksCamp_2012.json";
 
       fetch(url_to_stac_item).then(res => res.json()).then(async feature => {
-        const lyr = await L.stacLayer(feature, { debugLevel: 2 });
+        const lyr = L.stacLayer(feature, { debugLevel: 2 });
         lyr.on('click', console.log);
         lyr.addTo(map);
         map.fitBounds(lyr.getBounds());

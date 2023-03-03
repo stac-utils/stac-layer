@@ -1,4 +1,6 @@
-import range from "./range.js";
+function range(count) {
+  return new Array(count).fill(null).map((_, i) => i);
+}
 
 export default async function parseAlphas(georaster) {
   const geotiff = georaster._geotiff;

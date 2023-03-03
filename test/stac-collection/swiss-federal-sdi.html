@@ -30,7 +30,7 @@
       const url_to_stac_item = "https://data.geo.admin.ch/api/stac/v0.9/collections/ch.bazl.luftfahrtkarten-icao";
 
       fetch(url_to_stac_item).then(res => res.json()).then(async item => {
-        const lyr = await L.stacLayer(item, { debugLevel: 2 });
+        const lyr = L.stacLayer(item, { debugLevel: 2 });
         lyr.on('click', console.log);
         lyr.addTo(map);
         map.fitBounds(lyr.getBounds());

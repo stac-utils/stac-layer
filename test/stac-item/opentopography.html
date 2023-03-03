@@ -30,7 +30,7 @@
       const url_to_stac_item = "https://portal.opentopography.org/stac/ID09_Lloyd/pc_catalog.json";
 
       fetch(url_to_stac_item).then(res => res.json()).then(async feature => {
-        const lyr = await L.stacLayer(feature, { debugLevel: 2 });
+        const lyr = L.stacLayer(feature, { debugLevel: 2 });
         lyr.on('click', console.log);
         lyr.addTo(map);
         map.fitBounds(lyr.getBounds());

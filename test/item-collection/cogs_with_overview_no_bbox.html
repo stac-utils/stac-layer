@@ -33,7 +33,7 @@
       // const url_to_stac_item = 'https://earth-search.aws.element84.com/v0/collections/sentinel-s2-l2a-cogs/items?limit=10'
 
       fetch(url_to_stac_item).then(res => res.json()).then(async item => {
-        const lyr = await L.stacLayer(item, {
+        const lyr = L.stacLayer(item, {
           debugLevel: 2,
           displayPreview: true
         });

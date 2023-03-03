@@ -32,7 +32,7 @@
       fetch(url_to_stac_data).then(res => res.json()).then(async feature => {
         console.log("feature:", feature);
 
-        const lyr = await L.stacLayer(feature, {
+        const lyr = L.stacLayer(feature, {
           debugLevel: 2,
           assets: [
             "red", "green", "blue"

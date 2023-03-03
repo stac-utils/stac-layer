@@ -31,16 +31,18 @@
       const url_to_stac_item = "https://raw.githubusercontent.com/stac-extensions/eo/main/examples/item.json";
 
       fetch(url_to_stac_item).then(res => res.json()).then(async feature => {
-        const lyr = await L.stacLayer(feature, {
+        const lyr = L.stacLayer(feature, {
           displayPreview: false,
           debugLevel: 4,
           tileUrlTemplate: "https://tiles.rdnt.io/tiles/{z}/{x}/{y}@2x?url={url}",
           useTileLayerAsFallback: true
         });
-        console.log("lyr.stac:", lyr.stac);
+        lyr.on('click', console.warn);
+        lyr.on('loaded', console.log);
+        lyr.on('imageLayerAdded', console.log);
+        lyr.on('fallback', console.error);
         lyr.addTo(map);
         map.fitBounds(lyr.getBounds());
-        lyr.on("click", console.log);
 
         // todo
         test("lyr.stac includes band info", ({ eq }) => {

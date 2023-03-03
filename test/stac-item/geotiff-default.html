@@ -30,7 +30,7 @@
       const feature = {"id":"ramp_dhaka_bangladesh_source_fffcd405_7b32_4451_86f7_bd38b8c25912","bbox":[90.42238998815664,23.8986867088824,90.42315745854646,23.89939232968379],"type":"Feature","links":[{"rel":"collection","type":"application/json","href":"https://api.radiant.earth/mlhub/v1/collections/ramp_dhaka_bangladesh_source"},{"rel":"parent","type":"application/json","href":"https://api.radiant.earth/mlhub/v1/collections/ramp_dhaka_bangladesh_source"},{"rel":"root","type":"application/json","href":"https://api.radiant.earth/mlhub/v1/"},{"rel":"self","type":"application/geo+json","href":"https://api.radiant.earth/mlhub/v1/collections/ramp_dhaka_bangladesh_source/items/ramp_dhaka_bangladesh_source_fffcd405_7b32_4451_86f7_bd38b8c25912"}],"assets":{"imagery":{"href":"https://radiantearth.blob.core.windows.net/mlhub/ramp_dhaka_bangladesh/source/fffcd405-7b32-4451-86f7-bd38b8c25912.tif","type":"image/tiff; application=geotiff","roles":["data"]}},"geometry":{"type":"Polygon","coordinates":[[[90.42315745854646,23.89869934557993],[90.42314371598874,23.89939232968379],[90.42238998815664,23.899379692575113],[90.42240373472319,23.8986867088824],[90.42315745854646,23.89869934557993]]]},"collection":"ramp_dhaka_bangladesh_source","properties":{"datetime":"2019-08-16T00:00:00+0000"},"stac_version":"1.0.0","stac_extensions":[]};
 
       (async () => {
-        const lyr = await L.stacLayer(feature, { debugLevel: 2, displayGeoTiffByDefault: true });
+        const lyr = L.stacLayer(feature, { debugLevel: 2, displayGeoTiffByDefault: true });
         lyr.on('click', console.log);
         lyr.addTo(map);
         map.fitBounds(lyr.getBounds());

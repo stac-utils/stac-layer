@@ -32,7 +32,7 @@
       fetch(url_to_stac_item).then(res => res.json()).then(async feature => {
         const asset = feature.assets.visual;
 
-        const lyr = await L.stacLayer(asset, {
+        const lyr = L.stacLayer(asset, {
           bands: [2, 1, 0],
           debugLevel: 2,
           resolution: 256

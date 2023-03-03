@@ -22,8 +22,8 @@
     "format": "npx prettier --arrow-parens=avoid --print-width=120 --trailing-comma=none --write src/*.js src/*/*.js",
     "test": "node test/tests.js",
     "serve": "npx srvd --debug --wait=Infinity",
-    "setup": "cd data && ./setup.sh",
-    "tiler": "docker run --env-file=./.env --name titiler -p 8000:8000 --env PORT=8000 --rm -t developmentseed/titiler"
+    "setup": "cd data && bash ./setup.sh",
+    "tiler": "docker run --name titiler -p 8000:8000 --env PORT=8000 --rm -t developmentseed/titiler"
   },
   "repository": {
     "type": "git",
@@ -48,13 +48,11 @@
     "@mapbox/tilebelt": "^1.0.2",
     "@turf/boolean-point-in-polygon": "^6.5.0",
     "easy-image-loader": "^0.1.0",
-    "geojson-antimeridian-cut": "^0.1.0",
     "georaster": "^1.5.5",
     "georaster-layer-for-leaflet": "^3.7.1",
     "geotiff-epsg-code": "^0.2.0",
     "leaflet": "^1.8.0",
-    "reproject-geojson": "^0.2.0",
-    "stac-js": "^0.0.3"
+    "stac-js": "^0.0.4"
   },
   "devDependencies": {
     "@babel/cli": "^7.17.10",

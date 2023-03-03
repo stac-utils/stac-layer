@@ -32,7 +32,7 @@
         const asset = feature.assets.visual;
         console.log("asset:", asset);
 
-        const lyr = await L.stacLayer(asset, {
+        const lyr = L.stacLayer(asset, {
           bbox: feature.bbox,
           tileUrlTemplate: "https://tiles.rdnt.io/tiles/{z}/{x}/{y}@2x?url={url}",
           debugLevel: 2,

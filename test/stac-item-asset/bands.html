@@ -36,7 +36,7 @@
 
       if (!searchParams.has("bands")) document.location.search = "bands=2,1,0,3";
 
-      const lyr = await L.stacLayer(data, {
+      const lyr = L.stacLayer(data, {
         bands: searchParams.get("bands").split(/, ?/g).map(b => Number(b)),
         debugLevel: 2,
         resolution: 256

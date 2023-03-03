@@ -27,19 +27,15 @@
       }).addTo(map);
 
 
-      const url_to_stac_item = "https://data.geo.admin.ch/api/stac/v0.9/collections/ch.bazl.luftfahrtkarten-icao/items?page=1#0";
+      const url_to_stac_item = "https://data.geo.admin.ch/api/stac/v0.9/collections/ch.bazl.luftfahrtkarten-icao/items/luftfahrtkarten-icao";
 
-      fetch(url_to_stac_item).then(res => res.json()).then(async data => {
-        const { features } = data;
-
-        const feature = features[0];
-
-        const lyr = await L.stacLayer(feature, { debugLevel: 2 });
-
-        lyr.on('click', console.log);
-
+      fetch(url_to_stac_item).then(res => res.json()).then(async feature => {
+        const lyr = L.stacLayer(feature, { debugLevel: 2, resolution: 128 });
+        lyr.on('click', console.warn);
+        lyr.on('loaded', console.log);
+        lyr.on('imageLayerAdded', console.log);
+        lyr.on('fallback', console.error);
         lyr.addTo(map);
-
         map.fitBounds(lyr.getBounds());
       });
     </script>

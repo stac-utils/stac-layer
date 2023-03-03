@@ -33,7 +33,7 @@
         const asset = feature.assets.thumbnail;
         console.log("asset:", asset);
 
-        const lyr = await L.stacLayer(asset, { bbox: feature.bbox, debugLevel: 2 });
+        const lyr = L.stacLayer(asset, { bbox: feature.bbox, debugLevel: 2 });
 
         lyr.on('click', console.log);
 

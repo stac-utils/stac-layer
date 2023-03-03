@@ -3,12 +3,12 @@ import booleanPointInPolygon from "@turf/boolean-point-in-polygon";
 
 import { default as createStacObject, STAC, Asset, Catalog } from "stac-js";
 import { toAbsolute } from "stac-js/src/http.js";
-import { bindDataToClickEvent, enableLogging, log, registerEvents } from "./events.js";
+import { bindDataToClickEvent, enableLogging, flushEventQueue, log, logPromise, registerEvents, triggerEvent } from "./events.js";
 import { addAsset, addDefaultGeoTiff, addFootprintLayer, addThumbnails } from "./add.js";
 import { isBoundingBox } from "stac-js/src/geo.js";
 
 // Data must be: Catalog, Collection, Item, API Items, or API Collections
-const stacLayer = async (data, options = {}) => {
+const stacLayer = (data, options = {}) => {
   if (!data) {
     throw new Error("No data provided");
   }
@@ -134,47 +134,69 @@ const stacLayer = async (data, options = {}) => {
 
   // Create the layer group that we add all layers to
   const layerGroup = L.layerGroup();
+  if (!layerGroup.options) layerGroup.options = {};
+  layerGroup.options.debugLevel = options.debugLevel;
+  layerGroup.orphan = true;
   registerEvents(layerGroup);
 
   let promises = [];
 
   if (data.isItemCollection()) {
     const style = Object.assign({}, options.itemStyle, { fillOpacity: 0, weight: 1, color: "#ff8833" });
-    const lyr = createGeoJsonLayer(data.toGeoJSON(), style);
+    const layer = L.geoJSON(data.toGeoJSON(), style);
     promises = data.features.map(item => {
-      return addThumbnails(item, layerGroup, options).then(layer => {
-        if (!layer) {
-          return addDefaultGeoTiff(item, layerGroup, options);
-        }
-      });
+      return addThumbnails(item, layerGroup, options)
+        .then(layer => {
+          if (!layer) {
+            return addDefaultGeoTiff(item, layerGroup, options).catch(logPromise);
+          }
+        })
+        .catch(logPromise);
     });
-    // todo: This needs work to be more consistent
-    bindDataToClickEvent(lyr, e => {
+    bindDataToClickEvent(layer, e => {
       try {
         const point = [e.latlng.lng, e.latlng.lat];
-        const matches = data.features.filter(item => booleanPointInPolygon(point, item));
-        if (matches.length >= 2) {
+        const matches = data.features
+          .filter(item => booleanPointInPolygon(point, item))
+          .map(data => ({
+            data,
+            type: data.getObjectType()
+          }));
+        if (matches.length > 0) {
           return matches;
         }
       } catch (error) {
+        log(2, error);
         // code above failed, so just skip intersection checks
         // and return feature given by LeafletJS event
       }
-      return e?.layer?.feature;
+      let data = e?.layer?.feature;
+      if (!data) {
+        return null;
+      }
+      else if (!(data instanceof STAC)) {
+        data = createStacObject(data);
+      }
+      return {
+        data,
+        type: data.getObjectType()
+      };
     });
-    layerGroup.addLayer(lyr);
+    layerGroup.addLayer(layer);
   } else if (data.isItem() || data.isCollection() || options.assets.length > 0) {
     // No specific asset given by the user, visualize the default geotiff
     if (options.assets.length > 0) {
       log(2, "number of assets in options:", options.assets.length);
-      promises = options.assets.map(asset => addAsset(asset, layerGroup, options));
+      promises = options.assets.map(asset => addAsset(asset, layerGroup, options).catch(logPromise));
     } else {
       promises.push(
-        addDefaultGeoTiff(data, layerGroup, options).then(layer => {
-          if (!layer) {
-            return addThumbnails(data, layerGroup, options);
-          }
-        })
+        addDefaultGeoTiff(data, layerGroup, options)
+          .then(layer => {
+            if (!layer) {
+              return addThumbnails(data, layerGroup, options).catch(logPromise);
+            }
+          })
+          .catch(logPromise)
       );
     }
   }
@@ -199,16 +221,17 @@ const stacLayer = async (data, options = {}) => {
   layerGroup.bringToFront = () => layerGroup.getLayers().forEach(layer => layer.bringToFront());
   layerGroup.bringToBack = () => layerGroup.getLayers().forEach(layer => layer.bringToBack());
 
-  if (!layerGroup.options) layerGroup.options = {};
+  layerGroup.on('add', () => {
+    layerGroup.orphan = false;
+    flushEventQueue();
+  });
+  layerGroup.on('remove', () => layerGroup.orphan = true);
 
-  layerGroup.options.debugLevel = options.debugLevel;
-
-  if (options.map) {
-    options.map.addLayer(layerGroup);
-    options.map.fitBounds(layerGroup.getBounds());
-  }
-
-  await Promise.all(promises);
+  Promise.all(promises)
+    .then(() =>
+      triggerEvent("loaded", { data }, layerGroup)
+    )
+    .catch(logPromise);
 
   return layerGroup;
 };

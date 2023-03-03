@@ -26,21 +26,29 @@
           attribution: '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
       }).addTo(map);
 
+      const collection = {
+        stac_version:"1.0.0",
+        type: "Collection",
+        id: "antimeridian",
+        description: "",
+        extent: {
+          spatial: {
+            bbox: [[150,-10,-150,10]]
+          },
+          temporal: {
+            interval: [["2019-08-16T00:00:00+0000", "2019-08-16T00:00:00+0000"]]
+          }
+        },
+        license: "Apache-2.0",
+        links: []
+      };
 
-      const url_to_stac_collection = "https://planetarycomputer.microsoft.com/api/stac/v1/collections/gap";
-
-      fetch(url_to_stac_collection).then(res => res.json()).then(async collection => {
-
-        const lyr = await L.stacLayer(collection, {
-          debugLevel: 2,
-        });
-
-        lyr.on('click', console.log);
-
-        lyr.addTo(map);
-
-        map.fitBounds(lyr.getBounds());
+      const lyr = L.stacLayer(collection, {
+        debugLevel: 2,
       });
+      lyr.on('click', console.log);
+      lyr.addTo(map);
+      map.fitBounds(lyr.getBounds());
     </script>
   </body>
 </html>

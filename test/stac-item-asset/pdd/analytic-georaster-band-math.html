@@ -33,7 +33,7 @@
         const asset = feature.assets.analytic;
         console.log("asset:", asset);
 
-        const lyr = await L.stacLayer(asset, {
+        const lyr = L.stacLayer(asset, {
           bbox: feature.bbox,
           debugLevel: 2,
           pixelValuesToColorFn: ([r, g, b, a]) => {

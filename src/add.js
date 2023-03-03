@@ -1,9 +1,10 @@
-import { bindDataToClickEvent, log, setFallback } from "./events.js";
+import { bindDataToClickEvent, log, setFallback, triggerEvent } from "./events.js";
 import imageOverlay from "./utils/image-overlay.js";
 import tileLayer from "./utils/tile-layer.js";
-import createGeoJsonLayer from "./utils/create-geojson-layer.js";
 import createGeoRasterLayer from "./utils/create-georaster-layer.js";
+import getBounds from "./utils/get-bounds.js";
 import parseAlphas from "./utils/parse-alphas.js";
+import { toGeoJSON } from "stac-js/src/geo.js";
 
 export function addFootprintLayer(data, layerGroup, options) {
   // Add the geometry/bbox
@@ -28,10 +29,11 @@ export function addFootprintLayer(data, layerGroup, options) {
       style.fillOpacity = 0;
     }
     style = Object.assign({}, options.boundsStyle, style);
-    const lyr = createGeoJsonLayer(geojson, style);
-    bindDataToClickEvent(lyr, data);
-    layerGroup.addLayer(lyr);
-    return lyr;
+    const layer = L.geoJSON(geojson, style);
+    bindDataToClickEvent(layer, data);
+    layerGroup.addLayer(layer);
+    triggerEvent("boundsLayerAdded", { layer, geojson }, layerGroup);
+    return layer;
   }
   return null;
 }
@@ -54,21 +56,19 @@ export async function addTileLayer(asset, layerGroup, options) {
       });
       log(2, `built tile url template: "${tileUrlTemplate}"`);
       const tileLayerOptions = { ...options, url: href };
-      const lyr = await tileLayer(tileUrlTemplate, bounds, tileLayerOptions);
-      // todo: bands is all bands, not just the selected ones. correct?
-      layerGroup.stac = { assets: [{ key, asset }], bands: asset.getBands() };
-      bindDataToClickEvent(lyr, asset);
-      layerGroup.addLayer(lyr);
-      return lyr;
+      const layer = await tileLayer(tileUrlTemplate, bounds, tileLayerOptions);
+      bindDataToClickEvent(layer, asset);
+      layerGroup.addLayer(layer);
+      triggerEvent("imageLayerAdded", { type: "tilelayer", layer, asset }, layerGroup);
+      return layer;
     } else if (options.tileUrlTemplate) {
       const tileLayerOptions = { ...options, url: encodeURIComponent(href) };
-      const lyr = await tileLayer(options.tileUrlTemplate, bounds, tileLayerOptions);
-      bindDataToClickEvent(lyr, asset);
-      // todo: bands is all bands, not just the selected ones. correct?
-      layerGroup.stac = { assets: [{ key, asset }], bands: asset.getBands() };
-      layerGroup.addLayer(lyr);
+      const layer = await tileLayer(options.tileUrlTemplate, bounds, tileLayerOptions);
+      bindDataToClickEvent(layer, asset);
+      layerGroup.addLayer(layer);
+      triggerEvent("imageLayerAdded", { type: "tilelayer", layer, asset }, layerGroup);
       log(2, "added tile layer to layer group");
-      return lyr;
+      return layer;
     }
   } catch (error) {
     log(1, "caught the following error while trying to add a tile layer:", error);
@@ -79,9 +79,9 @@ export async function addTileLayer(asset, layerGroup, options) {
 export async function addAsset(asset, layerGroup, options) {
   log(2, "add asset", asset);
   if (asset.isGeoTIFF()) {
-    return addGeoTiff(asset, layerGroup, options);
+    return await addGeoTiff(asset, layerGroup, options);
   } else {
-    return addThumbnail([asset], layerGroup, options);
+    return await addThumbnail([asset], layerGroup, options);
   }
 }
 
@@ -103,18 +103,16 @@ export async function addGeoTiff(asset, layerGroup, options) {
   try {
     log(2, "add geotiff", asset);
     const href = asset.getAbsoluteUrl();
-    const key = asset.getKey();
     log(2, "creating georaster layer for", href);
-    const georasterLayer = await createGeoRasterLayer(href, options);
-    options.alphas = await parseAlphas(georasterLayer.options.georaster);
-    options.currentStats = georasterLayer.currentStats;
+    const layer = await createGeoRasterLayer(href, options);
+    options.alphas = await parseAlphas(layer.options.georaster);
+    options.currentStats = layer.currentStats;
     log(1, "successfully created georaster layer for", asset);
-    bindDataToClickEvent(georasterLayer, asset);
-    // todo: bands is all bands, not just the selected ones. correct?
-    layerGroup.stac = { assets: [{ key, asset }], bands: asset.getBands() };
-    setFallback(georasterLayer, layerGroup, () => addTileLayer(asset, layerGroup, options));
-    layerGroup.addLayer(georasterLayer);
-    return georasterLayer;
+    bindDataToClickEvent(layer, asset);
+    setFallback(layer, layerGroup, () => addTileLayer(asset, layerGroup, options));
+    layerGroup.addLayer(layer);
+    triggerEvent("imageLayerAdded", { type: "overview", layer, asset }, layerGroup);
+    return layer;
   } catch (error) {
     log(1, "failed to create georaster layer because of the following error:", error);
     return null;
@@ -142,19 +140,21 @@ export async function addThumbnail(thumbnails, layerGroup, options) {
     }
 
     const url = asset.getAbsoluteUrl();
-    const lyr = await imageOverlay(url, bounds, options.crossOrigin);
-    if (lyr === null) {
+    const layer = await imageOverlay(url, bounds, options.crossOrigin);
+    if (layer === null) {
       log(1, "image layer is null", url);
       return addThumbnail(thumbnails, layerGroup, options); // Retry with the remaining thumbnails
     }
-    layerGroup.addLayer(lyr);
+    bindDataToClickEvent(layer, asset);
+    layerGroup.addLayer(layer);
     return await new Promise(resolve => {
-      lyr.on("load", () => {
-        return resolve(lyr);
+      layer.on("load", () => {
+        triggerEvent("imageLayerAdded", { type: "preview", layer, asset }, layerGroup);
+        return resolve(layer);
       });
-      lyr.on("error", async () => {
+      layer.on("error", async () => {
         log(1, "create image layer errored", url);
-        layerGroup.removeLayer(lyr);
+        layerGroup.removeLayer(layer);
         const otherLyr = await addThumbnail(thumbnails, layerGroup, options); // Retry with the remaining thumbnails
         return resolve(otherLyr);
       });

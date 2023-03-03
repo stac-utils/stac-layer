@@ -1,5 +1,11 @@
-const onClickHandlers = [];
-const onFallbackHandlers = [];
+const eventHandlers = {
+  loaded: [],
+  fallback: [],
+  click: [],
+  imageLayerAdded: [],
+  boundsLayerAdded: []
+};
+const queue = [];
 let logLevel = 0;
 
 export function enableLogging(level) {
@@ -13,20 +19,45 @@ export function log(level, ...args) {
   }
 }
 
-// hijack on event to support on("click") as it isn't normally supported by layer groups
+export function logPromise(error) {
+  return log(1, error);
+}
+
 export function registerEvents(layerGroup) {
+  // hijack on event to support on("click") as it isn't normally supported by layer groups
   layerGroup.on2 = layerGroup.on;
   layerGroup.on = function (name, callback) {
-    if (name === "click") {
-      onClickHandlers.push(callback);
-      return this;
-    } else if (name === "fallback") {
-      onFallbackHandlers.push(callback);
+    if (name in eventHandlers) {
+      eventHandlers[name].push(callback);
       return this;
     } else if (this.on2) {
       return this.on2(...arguments);
     }
   };
+}
+
+export function flushEventQueue() {
+  while (queue.length > 0) {
+    let evt = queue.shift();
+    triggerEvent(evt.name, evt.data);
+  }
+}
+
+// some events are sent before the you can react on it
+// make a queue and only trigger once added to map
+export function triggerEvent(name, data, layerGroup = null) {
+  // Layer has not been added to map yet, queue events for later
+  if (layerGroup && layerGroup.orphan) {
+    queue.push({name, data});
+    return;
+  }
+  eventHandlers[name].forEach(callback => {
+    try {
+      callback(data);
+    } catch (error) {
+      log(1, error);
+    }
+  });
 }
 
 // if the given layer fails for any reason, remove it from the map, and call the fallback
@@ -43,13 +74,7 @@ export function setFallback(lyr, layerGroup, fallback) {
         log(1, `activating fallback because "${evt.error.message}"`);
         if (layerGroup.hasLayer(lyr)) layerGroup.removeLayer(lyr);
         await fallback();
-        onFallbackHandlers.forEach(handleOnFallback => {
-          try {
-            handleOnFallback({ error: evt });
-          } catch (error) {
-            log(1, error);
-          }
-        });
+        triggerEvent("fallback", { error: evt }, layerGroup);
       }
     });
   });
@@ -57,19 +82,17 @@ export function setFallback(lyr, layerGroup, fallback) {
 
 // sets up generic onClick event where a "stac" key is added to the event object
 // and is set to the provided data or the data used to create stacLayer
-export function bindDataToClickEvent(lyr, what) {
+export function bindDataToClickEvent(lyr, data) {
   lyr.on("click", evt => {
-    let data = typeof what === "function" ? what(evt) : what;
-    evt.stac = {
-      data,
-      type: data.getObjectType()
-    };
-    onClickHandlers.forEach(handleOnClick => {
-      try {
-        handleOnClick(evt);
-      } catch (error) {
-        log(1, error);
-      }
-    });
+    if (typeof data === 'function') {
+      evt.stac = data(evt);
+    }
+    else {
+      evt.stac = {
+        data,
+        type: data.getObjectType()
+      };
+    }
+    triggerEvent("click", evt);
   });
 }

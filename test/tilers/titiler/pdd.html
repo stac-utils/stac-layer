@@ -31,7 +31,7 @@
 
       fetch(url_to_stac_item).then(res => res.json()).then(async feature => {
         const options = { debugLevel: 2, tileUrlTemplate: "http://localhost:8000/cog/tiles/{z}/{x}/{y}?url={url}" };
-        const lyr = await L.stacLayer(feature, options);
+        const lyr = L.stacLayer(feature, options);
         lyr.on('click', console.log);
         lyr.addTo(map);
 

@@ -33,7 +33,7 @@
         // udm stands for unusable data mask
         const asset = feature.assets.udm;
 
-        const lyr = await L.stacLayer(asset, { debugLevel: 2 });
+        const lyr = L.stacLayer(asset, { debugLevel: 2 });
 
         lyr.on('click', console.log);
 
