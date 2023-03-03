@@ -1,4 +1,3 @@
-import { log } from "../events.js";
 import range from "./range.js";
 
 export default async function parseAlphas(georaster) {
@@ -32,7 +31,6 @@ export default async function parseAlphas(georaster) {
 
     return [i, { int, min, range }];
   });
-  log(2, "bands in parseAlphas:", bands, image.fileDirectory);
   const extra = ExtraSamples ? ExtraSamples.length : 0;
   const alphas = bands.slice(bands.length - extra);
 
