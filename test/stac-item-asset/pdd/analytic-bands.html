@@ -41,10 +41,10 @@
          });
 
         lyr.on('click', console.log);
+        // todo: this way of fitting the bounds is not ideal yet
+        lyr.on('boundsLayerAdded', () => map.fitBounds(lyr.getBounds()));
 
         lyr.addTo(map);
-
-        map.fitBounds(lyr.getBounds());
       });
     </script>
   </body>

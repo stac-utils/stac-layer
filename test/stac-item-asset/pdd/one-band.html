@@ -41,12 +41,10 @@
           resolution: 128
          });
 
-        // lyr.on('click', console.log);
+        lyr.on('click', console.log);
+        lyr.on('boundsLayerAdded', () => map.fitBounds(lyr.getBounds()));
 
-        // lyr.addTo(map);
         map.addLayer(lyr);
-
-        map.fitBounds(lyr.getBounds());
       });
     </script>
   </body>

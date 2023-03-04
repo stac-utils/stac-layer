@@ -82,8 +82,11 @@
       console.log("fallback:", evt);
       console.log("(after fallback) lyr.stac:", lyr.stac);
     });
+    lyr.on('boundsLayerAdded', evt => {
+      console.log(evt);
+      map.fitBounds(lyr.getBounds())
+    });
     lyr.addTo(map);
-    map.fitBounds(lyr.getBounds());
   </script>
 </body>
 

@@ -6,13 +6,14 @@ import createGeoRasterLayer from "./utils/create-georaster-layer.js";
 import getBounds from "./utils/get-bounds.js";
 import parseAlphas from "./utils/parse-alphas.js";
 import { toGeoJSON } from "stac-js/src/geo.js";
+import { CollectionCollection, ItemCollection, STAC } from "stac-js";
 
 function getGeoJson(data, options) {
   // Add the geometry/bbox
   let geojson = null;
-  if (data.isItemCollection() || data.isCollectionCollection()) {
+  if (data instanceof ItemCollection || data instanceof CollectionCollection) {
     geojson = toGeoJSON(data.getBoundingBox());
-  } else {
+  } else if (data instanceof STAC) {
     geojson = data.toGeoJSON();
   }
   if (!geojson) {
@@ -26,8 +27,8 @@ function getGeoJson(data, options) {
   return geojson;
 }
 
-export function addFootprintLayer(data, layerGroup, options, bbox = null) {
-  let geojson = bbox ? toGeoJSON(bbox) : getGeoJson(data, options);
+export function addFootprintLayer(data, layerGroup, options) {
+  let geojson = getGeoJson(data, options);
   if (geojson) {
     log(1, "adding footprint layer");
     let style = {};
@@ -121,8 +122,10 @@ export async function addGeoTiff(asset, layerGroup, options) {
     layerGroup.addLayer(layer);
     if (!layerGroup.footprintLayer) {
       let bbox = [georaster.xmin, georaster.ymin, georaster.xmax, georaster.ymax];
-      bbox = reprojectBoundingBox(bbox, { from: georaster.projection, to: 4326 });
-      addFootprintLayer(asset, layerGroup, options, bbox);
+      console.log({ bbox, from: georaster.projection, to: 4326 });
+      // todo: reproject geojson might be a bit more accurate?
+      options.bbox = reprojectBoundingBox({ bbox, from: georaster.projection, to: 4326, density: 100 });
+      addFootprintLayer(asset, layerGroup, options);
     }
     triggerEvent("imageLayerAdded", { type: "overview", layer, asset }, layerGroup);
     return layer;

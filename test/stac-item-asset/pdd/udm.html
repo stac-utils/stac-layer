@@ -36,10 +36,9 @@
         const lyr = L.stacLayer(asset, { debugLevel: 2 });
 
         lyr.on('click', console.log);
+        lyr.on('boundsLayerAdded', () => map.fitBounds(lyr.getBounds()));
 
         lyr.addTo(map);
-
-        map.fitBounds(lyr.getBounds());
       });
     </script>
   </body>
