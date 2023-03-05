@@ -110,9 +110,7 @@ export async function addGeoTiff(asset, layerGroup, options) {
   }
   try {
     log(2, "add geotiff", asset);
-    const href = asset.getAbsoluteUrl();
-    log(2, "creating georaster layer for", href);
-    const layer = await createGeoRasterLayer(href, options);
+    const layer = await createGeoRasterLayer(asset, options);
     const georaster = layer.options.georaster;
     options.alphas = await parseAlphas(georaster);
     options.currentStats = layer.currentStats;
