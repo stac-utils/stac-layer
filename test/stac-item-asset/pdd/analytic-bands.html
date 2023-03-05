@@ -42,6 +42,7 @@
 
         lyr.on('click', console.log);
         // todo: this way of fitting the bounds is not ideal yet
+        // make L.stacLayer async again and add a promise that resolves when the bounds layer is shown?
         lyr.on('boundsLayerAdded', () => map.fitBounds(lyr.getBounds()));
 
         lyr.addTo(map);
