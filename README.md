@@ -218,11 +218,8 @@ You can access this information through the `loaded` event.
 
 ```js
 const layer = stacLayer(data, options);
-layer.on("loaded", event => {
-  const { data, geojson, boundsLayer } = event;
+layer.on("loaded", ({ data }) => {
   // data is the stac-js object shown
-  // boundsLayer is a Leaflet layer object for the bounds
-  // geojson can be a GeoJSON object of the bounds
 });
 ```
 
@@ -239,8 +236,7 @@ Multiple types are possible:
 
 ```js
 const layer = stacLayer(data, options);
-layer.on("imageLayerAdded", event => {
-  const { type, layer, asset } = event;
+layer.on("imageLayerAdded", ({ type, layer, asset }) => {
   // type is the type of the layer
   // layer is the Leaflet layer object
   // asset can be a stac-js asset object
@@ -254,8 +250,8 @@ with GeoRasterLayer and it falls back to trying to use a tiler.
 
 ```js
 const layer = stacLayer(data, options);
-layer.on("fallback", event => {
-  // event.error is the initial LeafletJS error event
-  // that triggered the fallback
+layer.on("fallback", ({ error, asset }) => {
+  // error is the initial LeafletJS error event that triggered the fallback
+  // asset is the stac-js object for which it errored
 });
 ```

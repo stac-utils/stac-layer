@@ -1,5 +1,5 @@
 import reprojectBoundingBox from "reproject-bbox";
-import { log, onLayerGroupClick, setFallback, triggerEvent } from "./events.js";
+import { log, onLayerGroupClick, triggerEvent } from "./events.js";
 import imageOverlay from "./utils/image-overlay.js";
 import tileLayer from "./utils/tile-layer.js";
 import createGeoRasterLayer from "./utils/create-georaster-layer.js";
@@ -113,29 +113,52 @@ export async function addDefaultGeoTiff(stac, layerGroup, options) {
 }
 
 export async function addGeoTiff(asset, layerGroup, options) {
-  if (options.preferTileLayer) {
-    return addTileLayer(asset, layerGroup, options);
-  }
-  try {
-    log(2, "add geotiff", asset);
-    const layer = await createGeoRasterLayer(asset, options);
-    const georaster = layer.options.georaster;
-    options.alphas = await parseAlphas(georaster);
-    options.currentStats = layer.currentStats;
-    log(1, "successfully created georaster layer for", asset);
-    setFallback(layer, layerGroup, () => addTileLayer(asset, layerGroup, options));
-    addLayer(layer, layerGroup, asset);
-    if (!layerGroup.footprintLayer) {
-      let bbox = [georaster.xmin, georaster.ymin, georaster.xmax, georaster.ymax];
-      options.bbox = reprojectBoundingBox({ bbox, from: georaster.projection, to: 4326, density: 100 });
-      addFootprintLayer(asset, layerGroup, options);
+  return new Promise(async (resolve) => {
+    if (options.preferTileLayer) {
+      return resolve(await addTileLayer(asset, layerGroup, options));
     }
-    triggerEvent("imageLayerAdded", { type: "overview", layer, asset }, layerGroup);
-    return layer;
-  } catch (error) {
-    log(1, "failed to create georaster layer because of the following error:", error);
-    return null;
-  }
+
+    const fallback = async (error) => {
+      log(1, `activating fallback because "${error.message}"`);
+      triggerEvent("fallback", { asset, error }, layerGroup);
+      return await addTileLayer(asset, layerGroup, options); 
+    };
+
+    try {
+      log(2, "add geotiff", asset);
+
+      const layer = await createGeoRasterLayer(asset, options);
+      const georaster = layer.options.georaster;
+      options.alphas = await parseAlphas(georaster);
+      options.currentStats = layer.currentStats;
+      log(1, "successfully created georaster layer for", asset);
+
+      let count = 0;
+      layer.on("tileerror", async ({error}) => {
+        // sometimes LeafletJS might issue multiple error events before the layer is removed from the map.
+        // the counter makes sure we only active the fallback sequence once
+        count++;
+        if (count === 1) {
+          if (layerGroup.hasLayer(layer)) {
+            layerGroup.removeLayer(layer);
+          }
+          resolve(await fallback(error));
+        }
+      });
+      layer.on("load", () => resolve(layer));
+      addLayer(layer, layerGroup, asset);
+
+      if (!layerGroup.footprintLayer) {
+        let bbox = [georaster.xmin, georaster.ymin, georaster.xmax, georaster.ymax];
+        options.bbox = reprojectBoundingBox({ bbox, from: georaster.projection, to: 4326, density: 100 });
+        addFootprintLayer(asset, layerGroup, options);
+      }
+
+      triggerEvent("imageLayerAdded", { type: "overview", layer, asset }, layerGroup);
+    } catch (error) {
+      resolve(await fallback(error));
+    }
+  });
 }
 
 export async function addThumbnails(stac, layerGroup, options) {

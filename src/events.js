@@ -61,26 +61,6 @@ export function triggerEvent(name, data, layerGroup = null) {
   });
 }
 
-// if the given layer fails for any reason, remove it from the map, and call the fallback
-export function setFallback(lyr, layerGroup, fallback) {
-  // todo: doesn't work yet?
-  let count = 0;
-  ["tileerror"].forEach(name => {
-    lyr.on(name, async evt => {
-      count++;
-      // sometimes LeafletJS might issue multiple error events before
-      // the layer is removed from the map
-      // the following makes sure we only active the fallback sequence once
-      if (count === 1) {
-        log(1, `activating fallback because "${evt.error.message}"`);
-        if (layerGroup.hasLayer(lyr)) layerGroup.removeLayer(lyr);
-        await fallback();
-        triggerEvent("fallback", { error: evt }, layerGroup);
-      }
-    });
-  });
-}
-
 // sets up generic onClick event where a "stac" key is added to the event object
 // and is set to the provided data or the data used to create stacLayer
 export function onLayerGroupClick(event, layerGroup) {
