@@ -116,10 +116,10 @@ Adjust the display resolution, a power of two such as 32, 64, 128 or 256. By def
 
 [Leaflet Path](https://leafletjs.com/reference.html#path-option) (i.e. the vector style) for the bounds / footprint of the container.
 
-#### itemStyle
+#### collectionStyle
 > object (default: *Leaflet default, but `{fillOpacity: 0, weight: 1, color: '#ff8833'}`*)
 
-[Leaflet Path](https://leafletjs.com/reference.html#path-option) (i.e. the vector style) for individual items of an ItemCollection.
+[Leaflet Path](https://leafletjs.com/reference.html#path-option) (i.e. the vector style) for individual items of API Items (ItemCollection) or collections of API Collections.
 
 ### Display specific assets
 

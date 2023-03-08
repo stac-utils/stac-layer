@@ -1,4 +1,5 @@
 import booleanPointInPolygon from "@turf/boolean-point-in-polygon";
+import { APICollection, STACReference } from "stac-js";
 
 const eventHandlers = {
   loaded: [],
@@ -83,31 +84,41 @@ export function setFallback(lyr, layerGroup, fallback) {
 // sets up generic onClick event where a "stac" key is added to the event object
 // and is set to the provided data or the data used to create stacLayer
 export function onLayerGroupClick(event, layerGroup) {
-  let stac = layerGroup.getLayers()
-    .filter(layer => {
-      if (!layer.stac || layer === layerGroup.footprintLayer) {
-        return false;
+  let list = layerGroup
+    // Get all layers
+    .getLayers()
+    // Expand/Reduce the list to contain all STAC entities
+    .reduce((layers, layer) => {
+      let stac = layer.stac;
+      if (!stac || layer === layerGroup.footprintLayer) {
+        return layers;
       }
-      if (typeof layer.toGeoJSON === 'function') {
-        try {
-          let geojson = layer.toGeoJSON();
-          let point = [event.latlng.lng, event.latlng.lat];
-          if (geojson.type === "FeatureCollection") {
-            return geojson.features.some(feature => booleanPointInPolygon(point, feature));
-          }
-          else {
-            return booleanPointInPolygon(point, geojson);
-          }
-        } catch (error) {}
+      if (stac instanceof APICollection) {
+        stac.getAll().forEach(obj => layers.add(obj));
       }
+      else {
+        if (stac instanceof STACReference) {
+          stac = stac.getContext();
+        }
+        if (stac) {
+          layers.add(stac);
+        }
+      }
+      return layers;
+    }, new Set());
+  // Keep only STAC entities for which the click point is inside the geojson
+  list = [...list].filter((stac, i) => {
+    try {
+      const geojson = stac.toGeoJSON();
+      const point = [event.latlng.lng, event.latlng.lat];
+      return booleanPointInPolygon(point, geojson);
+    } catch (error) {
+      console.log(error);
+    }
+  });
 
-      let bounds = layer.getBounds();
-      return bounds.contains(event.latlng);
-    })
-    .map(layer => layer.stac);
-
-  if (stac.length > 0) {
-    event.stac = stac;
+  if (list.length > 0) {
+    event.stac = list;
     triggerEvent("click", event, layerGroup);
   }
 }

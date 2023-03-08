@@ -2,15 +2,8 @@ import L from "leaflet";
 
 import { default as createStacObject, STAC, Asset, Catalog } from "stac-js";
 import { toAbsolute } from "stac-js/src/http.js";
-import {
-  enableLogging,
-  flushEventQueue,
-  log,
-  logPromise,
-  registerEvents,
-  triggerEvent
-} from "./events.js";
-import { addAsset, addDefaultGeoTiff, addFootprintLayer, addThumbnails } from "./add.js";
+import { enableLogging, flushEventQueue, log, logPromise, registerEvents, triggerEvent } from "./events.js";
+import { addAsset, addDefaultGeoTiff, addFootprintLayer, addLayer, addThumbnails } from "./add.js";
 import { isBoundingBox } from "stac-js/src/geo.js";
 
 // Data must be: Catalog, Collection, Item, API Items, or API Collections
@@ -28,7 +21,7 @@ const stacLayer = async (data, options = {}) => {
       debugLevel: 0,
       resolution: 32,
       useTileLayerAsFallback: false,
-      itemStyle: {},
+      collectionStyle: {},
       boundsStyle: {}
     },
     options
@@ -135,6 +128,8 @@ const stacLayer = async (data, options = {}) => {
     };
   }
 
+  options.collectionStyle = Object.assign({}, options.collectionStyle, { fillOpacity: 0, weight: 1, color: "#ff8833" });
+
   log(2, "options:", options);
 
   // Create the layer group that we add all layers to
@@ -146,20 +141,18 @@ const stacLayer = async (data, options = {}) => {
 
   let promises = [];
 
-  // todo: Add support for CollectionCollection
-  if (data.isItemCollection()) {
-    const style = Object.assign({}, options.itemStyle, { fillOpacity: 0, weight: 1, color: "#ff8833" });
-    const layer = L.geoJSON(data.toGeoJSON(), style);
-    promises = data.features.map(item => {
-      return addThumbnails(item, layerGroup, options)
+  if (data.isCollectionCollection() || data.isItemCollection()) {
+    const layer = L.geoJSON(data.toGeoJSON(), options.collectionStyle);
+    promises = data.getAll().map(obj => {
+      return addThumbnails(obj, layerGroup, options)
         .then(layer => {
           if (!layer) {
-            return addDefaultGeoTiff(item, layerGroup, options).catch(logPromise);
+            return addDefaultGeoTiff(obj, layerGroup, options).catch(logPromise);
           }
         })
         .catch(logPromise);
     });
-    layerGroup.addLayer(layer);
+    addLayer(layer, layerGroup, data);
   } else if (data.isItem() || data.isCollection() || options.assets.length > 0) {
     // No specific asset given by the user, visualize the default geotiff
     if (options.assets.length > 0) {
@@ -205,8 +198,8 @@ const stacLayer = async (data, options = {}) => {
   layerGroup.on("remove", () => (layerGroup.orphan = true));
 
   const result = Promise.all(promises)
-  .then(() => triggerEvent("loaded", { data }, layerGroup))
-  .catch(logPromise)
+    .then(() => triggerEvent("loaded", { data }, layerGroup))
+    .catch(logPromise);
 
   if (!layerGroup.footprintLayer) {
     await result;
