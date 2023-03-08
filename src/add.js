@@ -7,6 +7,7 @@ import getBounds from "./utils/get-bounds.js";
 import parseAlphas from "./utils/parse-alphas.js";
 import { toGeoJSON } from "stac-js/src/geo.js";
 import { CollectionCollection, ItemCollection, STAC } from "stac-js";
+import withTimeout, { TIMEOUT } from "./utils/with-timeout.js";
 
 export function addLayer(layer, layerGroup, data) {
   layer.stac = data;
@@ -133,8 +134,18 @@ export async function addGeoTiff(asset, layerGroup, options) {
       options.currentStats = layer.currentStats;
       log(1, "successfully created georaster layer for", asset);
 
+      if (!layerGroup.footprintLayer) {
+        try {
+          let bbox = [georaster.xmin, georaster.ymin, georaster.xmax, georaster.ymax];
+          options.bbox = reprojectBoundingBox({ bbox, from: georaster.projection, to: 4326, density: 100 });
+          addFootprintLayer(asset, layerGroup, options);
+        } catch (error) {
+          console.trace(error);
+        }
+      }
+
       let count = 0;
-      layer.on("tileerror", async ({error}) => {
+      layer.on("tileerror", async (event) => {
         // sometimes LeafletJS might issue multiple error events before the layer is removed from the map.
         // the counter makes sure we only active the fallback sequence once
         count++;
@@ -142,19 +153,15 @@ export async function addGeoTiff(asset, layerGroup, options) {
           if (layerGroup.hasLayer(layer)) {
             layerGroup.removeLayer(layer);
           }
-          resolve(await fallback(error));
+          resolve(await fallback(event.error));
         }
       });
       layer.on("load", () => resolve(layer));
       addLayer(layer, layerGroup, asset);
 
-      if (!layerGroup.footprintLayer) {
-        let bbox = [georaster.xmin, georaster.ymin, georaster.xmax, georaster.ymax];
-        options.bbox = reprojectBoundingBox({ bbox, from: georaster.projection, to: 4326, density: 100 });
-        addFootprintLayer(asset, layerGroup, options);
-      }
-
       triggerEvent("imageLayerAdded", { type: "overview", layer, asset }, layerGroup);
+      // Make sure resolve is always called
+      withTimeout(TIMEOUT, () => resolve(layer));
     } catch (error) {
       resolve(await fallback(error));
     }

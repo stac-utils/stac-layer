@@ -1,6 +1,7 @@
 import L from "leaflet";
 import tilebelt from "@mapbox/tilebelt";
 import loadImage from "easy-image-loader";
+import { TIMEOUT } from "./with-timeout.js";
 
 // pratically identical to L.tileLayer
 // with the following exceptions:
@@ -19,7 +20,7 @@ export default async function tileLayer(tileUrlTemplate, bounds, options = {}) {
     const tileURL = L.Util.template(tileUrlTemplate, { s: options.subdomains?.[0], x, y, z, ...options });
 
     // will throw an error if it fails
-    await loadImage(tileURL, { debug: false, timeout: 5 * 1000 });
+    await loadImage(tileURL, { debug: false, timeout: TIMEOUT });
   }
   return lyr;
 }

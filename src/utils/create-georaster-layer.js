@@ -1,10 +1,10 @@
 import parseGeoRaster from "georaster";
 import GeoRasterLayer from "georaster-layer-for-leaflet";
 import get_epsg_code from "geotiff-epsg-code";
-import withTimeout from "./with-timeout.js";
+import withTimeout, { TIMEOUT } from "./with-timeout.js";
 
 export default function createGeoRasterLayer(asset, options) {
-  return withTimeout(5 * 1000, async () => {
+  return withTimeout(TIMEOUT, async () => {
     const georaster = await parseGeoRaster(asset.getAbsoluteUrl());
 
     // Handle no-data values
