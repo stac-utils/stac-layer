@@ -1,5 +1,5 @@
 import reprojectBoundingBox from "reproject-bbox";
-import { bindDataToClickEvent, log, setFallback, triggerEvent } from "./events.js";
+import { log, onLayerGroupClick, setFallback, triggerEvent } from "./events.js";
 import imageOverlay from "./utils/image-overlay.js";
 import tileLayer from "./utils/tile-layer.js";
 import createGeoRasterLayer from "./utils/create-georaster-layer.js";
@@ -7,6 +7,11 @@ import getBounds from "./utils/get-bounds.js";
 import parseAlphas from "./utils/parse-alphas.js";
 import { toGeoJSON } from "stac-js/src/geo.js";
 import { CollectionCollection, ItemCollection, STAC } from "stac-js";
+
+function addBindings(layer, layerGroup, data) {
+  layer.stac = data;
+  layer.on('click', evt => onLayerGroupClick(evt, layerGroup));
+}
 
 function getGeoJson(data, options) {
   // Add the geometry/bbox
@@ -32,7 +37,7 @@ export function addFootprintLayer(data, layerGroup, options) {
   if (geojson) {
     log(1, "adding footprint layer");
     const layer = L.geoJSON(geojson);
-    bindDataToClickEvent(layer, data);
+    addBindings(layer, layerGroup, data);
     layerGroup.addLayer(layer);
     layerGroup.footprintLayer = layer;
     setFootprintLayerStyle(layerGroup, options);
@@ -70,14 +75,14 @@ export async function addTileLayer(asset, layerGroup, options) {
       log(2, `built tile url template: "${tileUrlTemplate}"`);
       const tileLayerOptions = { ...options, url: href };
       const layer = await tileLayer(tileUrlTemplate, bounds, tileLayerOptions);
-      bindDataToClickEvent(layer, asset);
+      addBindings(layer, layerGroup, asset);
       layerGroup.addLayer(layer);
       triggerEvent("imageLayerAdded", { type: "tilelayer", layer, asset }, layerGroup);
       return layer;
     } else if (options.tileUrlTemplate) {
       const tileLayerOptions = { ...options, url: encodeURIComponent(href) };
       const layer = await tileLayer(options.tileUrlTemplate, bounds, tileLayerOptions);
-      bindDataToClickEvent(layer, asset);
+      addBindings(layer, layerGroup, asset);
       layerGroup.addLayer(layer);
       triggerEvent("imageLayerAdded", { type: "tilelayer", layer, asset }, layerGroup);
       log(2, "added tile layer to layer group");
@@ -120,7 +125,7 @@ export async function addGeoTiff(asset, layerGroup, options) {
     options.alphas = await parseAlphas(georaster);
     options.currentStats = layer.currentStats;
     log(1, "successfully created georaster layer for", asset);
-    bindDataToClickEvent(layer, asset);
+    addBindings(layer, layerGroup, asset);
     setFallback(layer, layerGroup, () => addTileLayer(asset, layerGroup, options));
     layerGroup.addLayer(layer);
     if (!layerGroup.footprintLayer) {
@@ -162,7 +167,7 @@ export async function addThumbnail(thumbnails, layerGroup, options) {
       log(1, "image layer is null", url);
       return addThumbnail(thumbnails, layerGroup, options); // Retry with the remaining thumbnails
     }
-    bindDataToClickEvent(layer, asset);
+    addBindings(layer, layerGroup, asset);
     layerGroup.addLayer(layer);
     return await new Promise(resolve => {
       layer.on("load", () => {

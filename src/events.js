@@ -1,3 +1,5 @@
+import booleanPointInPolygon from "@turf/boolean-point-in-polygon";
+
 const eventHandlers = {
   loaded: [],
   fallback: [],
@@ -23,7 +25,6 @@ export function logPromise(error) {
 }
 
 export function registerEvents(layerGroup) {
-  // hijack on event to support on("click") as it isn't normally supported by layer groups
   layerGroup.on2 = layerGroup.on;
   layerGroup.on = function (name, callback) {
     if (name in eventHandlers) {
@@ -81,16 +82,32 @@ export function setFallback(lyr, layerGroup, fallback) {
 
 // sets up generic onClick event where a "stac" key is added to the event object
 // and is set to the provided data or the data used to create stacLayer
-export function bindDataToClickEvent(lyr, data) {
-  lyr.on("click", evt => {
-    if (typeof data === "function") {
-      evt.stac = data(evt);
-    } else {
-      evt.stac = {
-        data,
-        type: data.getObjectType()
-      };
-    }
-    triggerEvent("click", evt);
-  });
+export function onLayerGroupClick(event, layerGroup) {
+  let stac = layerGroup.getLayers()
+    .filter(layer => {
+      if (!layer.stac || layer === layerGroup.footprintLayer) {
+        return false;
+      }
+      if (typeof layer.toGeoJSON === 'function') {
+        try {
+          let geojson = layer.toGeoJSON();
+          let point = [event.latlng.lng, event.latlng.lat];
+          if (geojson.type === "FeatureCollection") {
+            return geojson.features.some(feature => booleanPointInPolygon(point, feature));
+          }
+          else {
+            return booleanPointInPolygon(point, geojson);
+          }
+        } catch (error) {}
+      }
+
+      let bounds = layer.getBounds();
+      return bounds.contains(event.latlng);
+    })
+    .map(layer => layer.stac);
+
+  if (stac.length > 0) {
+    event.stac = stac;
+    triggerEvent("click", event, layerGroup);
+  }
 }

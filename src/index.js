@@ -1,10 +1,8 @@
 import L from "leaflet";
-import booleanPointInPolygon from "@turf/boolean-point-in-polygon";
 
 import { default as createStacObject, STAC, Asset, Catalog } from "stac-js";
 import { toAbsolute } from "stac-js/src/http.js";
 import {
-  bindDataToClickEvent,
   enableLogging,
   flushEventQueue,
   log,
@@ -160,34 +158,6 @@ const stacLayer = async (data, options = {}) => {
           }
         })
         .catch(logPromise);
-    });
-    bindDataToClickEvent(layer, e => {
-      try {
-        const point = [e.latlng.lng, e.latlng.lat];
-        const matches = data.features
-          .filter(item => booleanPointInPolygon(point, item))
-          .map(data => ({
-            data,
-            type: data.getObjectType()
-          }));
-        if (matches.length > 0) {
-          return matches;
-        }
-      } catch (error) {
-        log(2, error);
-        // code above failed, so just skip intersection checks
-        // and return feature given by LeafletJS event
-      }
-      let data = e?.layer?.feature;
-      if (!data) {
-        return null;
-      } else if (!(data instanceof STAC)) {
-        data = createStacObject(data);
-      }
-      return {
-        data,
-        type: data.getObjectType()
-      };
     });
     layerGroup.addLayer(layer);
   } else if (data.isItem() || data.isCollection() || options.assets.length > 0) {
