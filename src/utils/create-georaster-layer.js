@@ -30,7 +30,7 @@ export default function createGeoRasterLayer(asset, options) {
     }
     if (mins.every(min => min !== null) && maxs.every(max => max !== null)) {
       layer.currentStats = { mins, maxs, ranges };
-      layer.calcStats = false;
+      layer.calcStats = true; // todo: should be set to false, but https://github.com/GeoTIFF/georaster-layer-for-leaflet/issues/120
     } else if (Array.isArray(options.bands) && options.bands.length >= 1 && options.bands.length <= 4) {
       // hack to force GeoRasterLayer to calculate statistics
       layer.calcStats = true;

@@ -27,20 +27,23 @@
       }).addTo(map);
 
       // Todo: needs example without statistics included in the tif
-      const url_to_stac_item = "https://raw.githubusercontent.com/cholmes/pdd-stac/beta2/disasters/hurricane-harvey/hurricane-harvey-0831/20170831_172754_101c/20170831_172754_101c.json";
-
-      fetch(url_to_stac_item).then(res => res.json()).then(async feature => {
-        feature.assets.visual['file:nodata'] = [0];
-        feature.assets.visual['raster:bands'] = [
-          {statistics: {minimum: 0, maximum: 255}},
-          {statistics: {minimum: 0, maximum: 255}},
-          {statistics: {minimum: 0, maximum: 255}},
-        ];
-        const lyr = await L.stacLayer(feature, { debugLevel: 0 });
-        lyr.on('click', console.log);
-        lyr.addTo(map);
-        map.fitBounds(lyr.getBounds());
+      const asset = {
+        href: "http://localhost:8080/data/eu_pasture.tiff",
+        type: "image/tiff; application=geotiff",
+        roles: ["overview"],
+        "raster:bands": [
+          {statistics: {minimum: 0, maximum: 0.2}}
+        ]
+      }
+      const lyr = await L.stacLayer(asset, {
+        debugLevel: 2,
+        displayGeoTiffByDefault: true,
+        resolution: 256
       });
+      console.log(lyr);
+      lyr.on('click', console.log);
+      lyr.addTo(map);
+      map.fitBounds(lyr.getBounds());
     </script>
   </body>
 </html>
