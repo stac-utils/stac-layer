@@ -8,29 +8,34 @@ export default function createGeoRasterLayer(asset, options) {
     const georaster = await parseGeoRaster(asset.getAbsoluteUrl());
     
     // Handle no-data values
-    // todo: per band?
     let noDataValues = asset.getNoDataValues();
     if (noDataValues.length > 0) {
       georaster.noDataValue = noDataValues[0];
     }
 
-    // todo: handle min/max values (per band)
-
-    // just in case
-    if (options.debugLevel < 0) options.debugLevel = 0;
-
-    if ([undefined, null, "", 32767].includes(georaster.projection)) {
-      if (georaster._geotiff) {
-        georaster.projection = await get_epsg_code(georaster._geotiff);
-      }
+    if ([undefined, null, "", 32767].includes(georaster.projection) && georaster._geotiff) {
+      georaster.projection = await get_epsg_code(georaster._geotiff);
     }
 
-    // todo: mask based on the geometry?
-    // https://github.com/GeoTIFF/georaster-layer-for-leaflet/blob/master/ADVANCED.md#masking
     const layer = new GeoRasterLayer({ georaster, ...options });
 
-    // hack to force GeoRasterLayer to calculate statistics
-    if (options.calcStats) layer.calcStats = true;
+    let mins = [];
+    let maxs = [];
+    let ranges = [];
+    for(let i = 0; i < georaster.numberOfRasters; i++) {
+      let { minimum, maximum } = asset.getMinMaxValues(i);
+      mins.push(minimum);
+      maxs.push(maximum);
+      ranges.push(maximum - minimum);
+    }
+    if (mins.every(min => min !== null) && maxs.every(max => max !== null)) {
+      layer.currentStats = {mins, maxs, ranges};
+      layer.calcStats = false;
+    }
+    else if (Array.isArray(options.bands) && options.bands.length >= 1 && options.bands.length <= 4) {
+      // hack to force GeoRasterLayer to calculate statistics
+      layer.calcStats = true;
+    }
 
     return layer;
   });

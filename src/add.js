@@ -120,8 +120,6 @@ export async function addGeoTiff(asset, layerGroup, options) {
     layerGroup.addLayer(layer);
     if (!layerGroup.footprintLayer) {
       let bbox = [georaster.xmin, georaster.ymin, georaster.xmax, georaster.ymax];
-      console.log({ bbox, from: georaster.projection, to: 4326 });
-      // todo: reproject geojson might be a bit more accurate?
       options.bbox = reprojectBoundingBox({ bbox, from: georaster.projection, to: 4326, density: 100 });
       addFootprintLayer(asset, layerGroup, options);
     }

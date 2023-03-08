@@ -105,7 +105,6 @@ const stacLayer = (data, options = {}) => {
       options.bands = [g, g, g, a];
     }
 
-    options.calcStats = true;
     options.pixelValuesToColorFn = values => {
       const { mins, maxs, ranges } = options.currentStats;
       const fitted = values.map((v, i) => {
@@ -149,6 +148,7 @@ const stacLayer = (data, options = {}) => {
 
   let promises = [];
 
+  // todo: Add support for CollectionCollection
   if (data.isItemCollection()) {
     const style = Object.assign({}, options.itemStyle, { fillOpacity: 0, weight: 1, color: "#ff8833" });
     const layer = L.geoJSON(data.toGeoJSON(), style);

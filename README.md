@@ -123,7 +123,7 @@ Adjust the display resolution, a power of two such as 32, 64, 128 or 256. By def
 
 ### Display specific assets
 
-#### bbox / bounds / latLngBounds
+#### bbox / latLngBounds
 > 1. [latLngBounds](https://leafletjs.com/reference.html#latlngbounds)
 > 2. [West, South, East, North]
 > 
