@@ -30,7 +30,7 @@
       const url_to_stac_item = "https://storage.googleapis.com/cfo-public/vegetation/California-Vegetation-CanopyBaseHeight-2016-Summer-00010m.json";
 
       fetch(url_to_stac_item).then(res => res.json()).then(async item => {
-        const lyr = L.stacLayer(item, {
+        const lyr = await L.stacLayer(item, {
           debugLevel: 2,
           tileUrlTemplate: "http://tiles.rdnt.io/tiles/{z}/{x}/{y}?url={url}"
         });

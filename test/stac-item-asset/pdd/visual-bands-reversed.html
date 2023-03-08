@@ -32,17 +32,14 @@
       fetch(url_to_stac_item).then(res => res.json()).then(async feature => {
         const asset = feature.assets.visual;
 
-        const lyr = L.stacLayer(asset, {
+        const lyr = await L.stacLayer(asset, {
           bands: [2, 1, 0],
           debugLevel: 2,
           resolution: 256
         });
         lyr.on('click', console.log);
-        lyr.on('boundsLayerAdded', evt => {
-          console.log(evt);
-          map.fitBounds(lyr.getBounds())
-        });
         lyr.addTo(map);
+        map.fitBounds(lyr.getBounds());
       });
     </script>
   </body>

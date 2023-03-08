@@ -31,19 +31,24 @@ export function addFootprintLayer(data, layerGroup, options) {
   let geojson = getGeoJson(data, options);
   if (geojson) {
     log(1, "adding footprint layer");
-    let style = {};
-    if (layerGroup.getLayers().length > 0) {
-      style.fillOpacity = 0;
-    }
-    style = Object.assign({}, options.boundsStyle, style);
-    const layer = L.geoJSON(geojson, style);
+    const layer = L.geoJSON(geojson);
     bindDataToClickEvent(layer, data);
     layerGroup.addLayer(layer);
     layerGroup.footprintLayer = layer;
-    triggerEvent("boundsLayerAdded", { layer, geojson }, layerGroup);
+    setFootprintLayerStyle(layerGroup, options);
+    layerGroup.on("imageLayerAdded", () => setFootprintLayerStyle(layerGroup, options));
     return layer;
   }
   return null;
+}
+
+export function setFootprintLayerStyle(layerGroup, options) {
+  let style = {};
+  if (layerGroup.getLayers().length > 1) {
+    style.fillOpacity = 0;
+  }
+  style = Object.assign({}, options.boundsStyle, style);
+  layerGroup.footprintLayer.setStyle(style);
 }
 
 export async function addTileLayer(asset, layerGroup, options) {

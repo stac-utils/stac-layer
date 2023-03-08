@@ -30,7 +30,7 @@
       const url_to_stac_item = "https://raw.githubusercontent.com/pangeo-data/pangeo-datastore-stac/master/master/ocean/sea_surface_height/collection.json";
 
       fetch(url_to_stac_item).then(res => res.json()).then(async feature => {
-        const lyr = L.stacLayer(feature, { debugLevel: 2 });
+        const lyr = await L.stacLayer(feature, { debugLevel: 2 });
         console.log({ lyr });
         lyr.on('click', console.log);
         lyr.addTo(map);

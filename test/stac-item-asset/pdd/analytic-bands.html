@@ -33,19 +33,15 @@
         const asset = feature.assets.analytic;
         console.log("asset:", asset);
 
-        const lyr = L.stacLayer(asset, {
+        const lyr = await L.stacLayer(asset, {
           bbox: feature.bbox,
           debugLevel: 2,
           bands: [2, 1, 0],
           resolution: 64
          });
-
         lyr.on('click', console.log);
-        // todo: this way of fitting the bounds is not ideal yet
-        // make L.stacLayer async again and add a promise that resolves when the bounds layer is shown?
-        lyr.on('boundsLayerAdded', () => map.fitBounds(lyr.getBounds()));
-
         lyr.addTo(map);
+        map.fitBounds(lyr.getBounds());
       });
     </script>
   </body>

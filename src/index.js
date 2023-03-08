@@ -16,7 +16,7 @@ import { addAsset, addDefaultGeoTiff, addFootprintLayer, addThumbnails } from ".
 import { isBoundingBox } from "stac-js/src/geo.js";
 
 // Data must be: Catalog, Collection, Item, API Items, or API Collections
-const stacLayer = (data, options = {}) => {
+const stacLayer = async (data, options = {}) => {
   if (!data) {
     throw new Error("No data provided");
   }
@@ -234,9 +234,13 @@ const stacLayer = (data, options = {}) => {
   });
   layerGroup.on("remove", () => (layerGroup.orphan = true));
 
-  Promise.all(promises)
-    .then(() => triggerEvent("loaded", { data }, layerGroup))
-    .catch(logPromise);
+  const result = Promise.all(promises)
+  .then(() => triggerEvent("loaded", { data }, layerGroup))
+  .catch(logPromise)
+
+  if (!layerGroup.footprintLayer) {
+    await result;
+  }
 
   return layerGroup;
 };

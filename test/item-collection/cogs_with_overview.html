@@ -33,7 +33,7 @@
       const url_to_stac_item = 'https://tamn.snapplanet.io/search?bbox=125.727770,-29.514858,133.412707,-23.673395&collections=S2'
 
       fetch(url_to_stac_item).then(res => res.json()).then(async item => {
-        const lyr = L.stacLayer(item, {
+        const lyr = await L.stacLayer(item, {
           debugLevel: 2,
           displayPreview: true
         });
@@ -41,7 +41,6 @@
         lyr.on('click', console.warn);
         lyr.on('loaded', console.log);
         lyr.on('imageLayerAdded', console.log);
-        lyr.on('boundsLayerAdded', console.log);
         lyr.on('fallback', console.error);
         lyr.addTo(map);
         map.fitBounds(lyr.getBounds());

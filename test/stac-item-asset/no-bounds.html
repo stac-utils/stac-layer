@@ -32,15 +32,15 @@
         type: "image/jpeg"
       };
 
-      const lyr = L.stacLayer(data, {
+      const lyr = await L.stacLayer(data, {
         debugLevel: 2,
         resolution: 256
       });
-
-      lyr.on('click', console.log);
-
+      lyr.on('click', console.warn);
+      lyr.on('loaded', console.log);
+      lyr.on('imageLayerAdded', console.log);
+      lyr.on('fallback', console.error);
       lyr.addTo(map);
-
       map.fitBounds(lyr.getBounds());
     </script>
   </body>

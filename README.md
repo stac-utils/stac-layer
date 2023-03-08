@@ -247,20 +247,6 @@ layer.on("imageLayerAdded", event => {
 });
 ```
 
-## `boundsLayerAdded`: once a new bounds layer is added
-
-Once the layer with the bbox / geometry is added to the map.
-Helps to get information about which data is being visualized.
-
-```js
-const layer = stacLayer(data, options);
-layer.on("boundsLayerAdded", event => {
-  const { layer, geojson } = event;
-  // layer is the Leaflet layer object
-  // geojson is a GeoJSON object of the bbox / geometry
-});
-```
-
 ## `fallback`: listening to fallback events
 
 STAC Layer fires a custom "fallback" event when an error occurs rendering

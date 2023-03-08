@@ -30,7 +30,7 @@
       const url_to_stac_item = "https://cbers-stac-1-0-0.s3.amazonaws.com/CBERS4/MUX/028/071/CBERS_4_MUX_20190507_028_071_L2.json";
 
       fetch(url_to_stac_item).then(res => res.json()).then(async item => {
-        const lyr = L.stacLayer(item, {
+        const lyr = await L.stacLayer(item, {
           debugLevel: 2,
           displayPreview: false,
           tileUrlTemplate: "http://localhost:8000/cog/tiles/{z}/{x}/{y}@2x?url={url}"

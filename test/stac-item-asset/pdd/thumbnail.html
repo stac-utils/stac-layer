@@ -33,12 +33,10 @@
         const asset = feature.assets.thumbnail;
         console.log("asset:", asset);
 
-        const lyr = L.stacLayer(asset, { bbox: feature.bbox, debugLevel: 2 });
-
+        const lyr = await L.stacLayer(asset, { bbox: feature.bbox, debugLevel: 2 });
         lyr.on('click', console.log);
-        lyr.on('boundsLayerAdded', () => map.fitBounds(lyr.getBounds()));
-
         lyr.addTo(map);
+        map.fitBounds(lyr.getBounds());
       });
     </script>
   </body>

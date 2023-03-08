@@ -36,19 +36,14 @@
 
       if (!searchParams.has("bands")) document.location.search = "bands=2,1,0,3";
 
-      const lyr = L.stacLayer(data, {
+      const lyr = await L.stacLayer(data, {
         bands: searchParams.get("bands").split(/, ?/g).map(b => Number(b)),
         debugLevel: 2,
         resolution: 256
       });
-
       lyr.on('click', console.log);
-      lyr.on('boundsLayerAdded', evt => {
-        console.log(evt);
-        map.fitBounds(lyr.getBounds())
-      });
-
       lyr.addTo(map);
+      map.fitBounds(lyr.getBounds());
     </script>
   </body>
 </html>

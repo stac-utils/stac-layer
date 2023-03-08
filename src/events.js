@@ -2,8 +2,7 @@ const eventHandlers = {
   loaded: [],
   fallback: [],
   click: [],
-  imageLayerAdded: [],
-  boundsLayerAdded: []
+  imageLayerAdded: []
 };
 const queue = [];
 let logLevel = 0;

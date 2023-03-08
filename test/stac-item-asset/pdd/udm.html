@@ -33,12 +33,10 @@
         // udm stands for unusable data mask
         const asset = feature.assets.udm;
 
-        const lyr = L.stacLayer(asset, { debugLevel: 2 });
-
+        const lyr = await L.stacLayer(asset, { debugLevel: 2 });
         lyr.on('click', console.log);
-        lyr.on('boundsLayerAdded', () => map.fitBounds(lyr.getBounds()));
-
         lyr.addTo(map);
+        map.fitBounds(lyr.getBounds());
       });
     </script>
   </body>

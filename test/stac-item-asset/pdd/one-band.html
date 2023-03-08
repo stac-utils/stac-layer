@@ -33,18 +33,16 @@
         const asset = feature.assets.analytic;
         console.log("asset:", asset);
 
-        const lyr = L.stacLayer(asset, {
+        const lyr = await L.stacLayer(asset, {
           // display only the first band (red band)
           bands: [0],
           bbox: feature.bbox,
           debugLevel: 2,
           resolution: 128
-         });
-
+        });
         lyr.on('click', console.log);
-        lyr.on('boundsLayerAdded', () => map.fitBounds(lyr.getBounds()));
-
         map.addLayer(lyr);
+        map.fitBounds(lyr.getBounds());
       });
     </script>
   </body>

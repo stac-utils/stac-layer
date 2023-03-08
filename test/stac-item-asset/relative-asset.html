@@ -72,7 +72,7 @@
       ]
     };
 
-    const lyr = L.stacLayer(feature, {
+    const lyr = await L.stacLayer(feature, {
       debugLevel: 4,
       resolution: 128,
       baseUrl: "https://ard.maxar.com/samples/v4/rio_deforestation/19/300022033202/2011-05-11/103001000AC5B000.json",
@@ -82,11 +82,8 @@
       console.log("fallback:", evt);
       console.log("(after fallback) lyr.stac:", lyr.stac);
     });
-    lyr.on('boundsLayerAdded', evt => {
-      console.log(evt);
-      map.fitBounds(lyr.getBounds())
-    });
     lyr.addTo(map);
+    map.fitBounds(lyr.getBounds());
   </script>
 </body>
 

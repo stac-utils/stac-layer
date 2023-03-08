@@ -33,7 +33,7 @@
         const asset = feature.assets.analytic;
         console.log("asset:", asset);
 
-        const lyr = L.stacLayer(asset, {
+        const lyr = await L.stacLayer(asset, {
           bbox: feature.bbox,
           buildTileUrlTemplate: ({ url }) => {
             return `https://tiles.rdnt.io/tiles/{z}/{x}/{y}@2x?url=${encodeURIComponent(url)}&bands=1,1,1`;

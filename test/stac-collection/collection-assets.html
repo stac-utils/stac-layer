@@ -50,7 +50,7 @@
         }
       };
 
-      const lyr = L.stacLayer(collection, {
+      const lyr = await L.stacLayer(collection, {
         debugLevel: 2,
         displayGeoTiffByDefault: true,
       });

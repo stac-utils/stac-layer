@@ -31,7 +31,7 @@
 
       fetch(url_to_stac_catalog).then(res => res.json()).then(async url_to_stac_catalog => {
         try {
-          const lyr = L.stacLayer(url_to_stac_catalog, { debugLevel: 2 });
+          const lyr = await L.stacLayer(url_to_stac_catalog, { debugLevel: 2 });
         } catch (error) {
           alert(error);
         }
