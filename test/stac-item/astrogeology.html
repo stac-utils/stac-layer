@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"/>
+    <style>
+      #map {
+        bottom: 0;
+        left: 0;
+        position: absolute;
+        right: 0;
+        top: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="map"></div>
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <script src="/dist/stac-layer.min.js" type="module"></script>
+    <script type="module">
+      // initalize leaflet map
+      const map = L.map('map').setView([0, 0], 5);
+
+      // add OpenStreetMap basemap
+      L.tileLayer.wms('https://planetarymaps.usgs.gov/cgi-bin/mapserv?map=/maps/mars/mars_simp_cyl.map', {
+          attribution: 'USGS Astrogeology',
+          layers: 'MDIM21',
+          crs: L.CRS.EPSG4326,
+          format: 'image/png',
+      }).addTo(map);
+
+
+      const url_to_stac_item = "https://stac.astrogeology.usgs.gov/api/collections/mo_themis_controlled_observations_test/items/I54323010RDR";
+
+      fetch(url_to_stac_item).then(res => res.json()).then(async feature => {
+        const lyr = await L.stacLayer(feature, { debugLevel: 2 });
+        console.log({ lyr });
+        lyr.on('click', console.log);
+        lyr.addTo(map);
+        const bounds = lyr.getBounds();
+        if (bounds) map.fitBounds(bounds);
+      });
+    </script>
+  </body>
+</html>
