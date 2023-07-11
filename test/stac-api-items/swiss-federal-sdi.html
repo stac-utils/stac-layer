@@ -27,11 +27,12 @@
       }).addTo(map);
 
 
-      const url_to_stac_item = "https://data.geo.admin.ch/api/stac/v0.9/collections/ch.bazl.luftfahrtkarten-icao/items?page=1#0";
+      const url_to_stac_item = "https://data.geo.admin.ch/api/stac/v0.9/collections/ch.bazl.luftfahrtkarten-icao/items?page=1";
 
       fetch(url_to_stac_item).then(res => res.json()).then(async item => {
         const lyr = await L.stacLayer(item, {
-          debugLevel: 2
+          debugLevel: 2,
+          resolution: 128
         });
         
         lyr.addTo(map);

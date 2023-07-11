@@ -26,22 +26,14 @@
           attribution: '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
       }).addTo(map);
 
-      // has a broken thumbnail asset but functional overview asset
-      // const url_to_stac_item = 'https://planetarycomputer.microsoft.com/api/stac/v1/search?bbox=125.727770,-29.514858,133.412707,-23.673395&collections=landsat-8-c2-l2&limit=5';
-      
-      // has a functional thumbnail asset
-      const url_to_stac_item = 'https://tamn.snapplanet.io/search?bbox=125.727770,-29.514858,133.412707,-23.673395&collections=S2'
 
-      fetch(url_to_stac_item).then(res => res.json()).then(async item => {
-        const lyr = await L.stacLayer(item, {
-          debugLevel: 2,
-          displayPreview: true
-        });
+      const url_to_stac_item = "https://raw.githubusercontent.com/cholmes/pdd-stac/beta2/disasters/hurricane-harvey/hurricane-harvey-0831/20170831_172754_101c/20170831_172754_101c.json";
 
-        lyr.addTo(map);
-
+      fetch(url_to_stac_item).then(res => res.json()).then(async feature => {
+        feature.assets.visual['file:nodata'] = [0];
+        const lyr = await L.stacLayer(feature, { debugLevel: 2 });
         lyr.on('click', console.log);
-
+        lyr.addTo(map);
         map.fitBounds(lyr.getBounds());
       });
     </script>

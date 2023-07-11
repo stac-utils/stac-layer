@@ -34,11 +34,8 @@
         console.log("asset:", asset);
 
         const lyr = await L.stacLayer(asset, { bbox: feature.bbox, debugLevel: 2 });
-
         lyr.on('click', console.log);
-
         lyr.addTo(map);
-
         map.fitBounds(lyr.getBounds());
       });
     </script>

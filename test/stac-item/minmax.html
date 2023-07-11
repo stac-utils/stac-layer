@@ -15,7 +15,6 @@
   </head>
   <body>
     <div id="map"></div>
-    <script src="https://unpkg.com/flug"></script>
     <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
     <script src="/dist/stac-layer.min.js" type="module"></script>
     <script type="module">
@@ -27,26 +26,24 @@
           attribution: '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
       }).addTo(map);
 
-
-      const url_to_stac_item = "https://raw.githubusercontent.com/stac-extensions/eo/main/examples/item.json";
-
-      fetch(url_to_stac_item).then(res => res.json()).then(async feature => {
-        const lyr = await L.stacLayer(feature, {
-          displayPreview: false,
-          debugLevel: 4,
-          tileUrlTemplate: "https://tiles.rdnt.io/tiles/{z}/{x}/{y}@2x?url={url}",
-          useTileLayerAsFallback: true
-        });
-        console.log("lyr.stac:", lyr.stac);
-        lyr.addTo(map);
-        map.fitBounds(lyr.getBounds());
-        lyr.on("click", console.log);
-
-        test("lyr.stac includes band info", ({ eq }) => {
-          eq(typeof lyr.stac, "object");
-          eq(lyr.stac.bands.map(band => band.common_name), ["red", "green", "blue"]);
-        });
+      // Todo: needs example without statistics included in the tif
+      const asset = {
+        href: "http://localhost:8080/data/eu_pasture.tiff",
+        type: "image/tiff; application=geotiff",
+        roles: ["overview"],
+        "raster:bands": [
+          {statistics: {minimum: 0, maximum: 0.2}}
+        ]
+      }
+      const lyr = await L.stacLayer(asset, {
+        debugLevel: 2,
+        displayGeoTiffByDefault: true,
+        resolution: 256
       });
+      console.log(lyr);
+      lyr.on('click', console.log);
+      lyr.addTo(map);
+      map.fitBounds(lyr.getBounds());
     </script>
   </body>
 </html>

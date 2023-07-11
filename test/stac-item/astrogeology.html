@@ -22,22 +22,23 @@
       const map = L.map('map').setView([0, 0], 5);
 
       // add OpenStreetMap basemap
-      L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png', {
-          attribution: '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
+      L.tileLayer.wms('https://planetarymaps.usgs.gov/cgi-bin/mapserv?map=/maps/mars/mars_simp_cyl.map', {
+          attribution: 'USGS Astrogeology',
+          layers: 'MDIM21',
+          crs: L.CRS.EPSG4326,
+          format: 'image/png',
       }).addTo(map);
 
 
-      const url_to_stac_item = "https://data.geo.admin.ch/api/stac/v0.9/collections/ch.bazl.luftfahrtkarten-icao/items/luftfahrtkarten-icao";
+      const url_to_stac_item = "https://stac.astrogeology.usgs.gov/api/collections/mo_themis_controlled_observations_test/items/I54323010RDR";
 
       fetch(url_to_stac_item).then(res => res.json()).then(async feature => {
-        const lyr = await L.stacLayer(feature, { debugLevel: 2, resolution: 128 });
-        lyr.on('click', console.warn);
-        lyr.on('loaded', console.log);
-        lyr.on('imageLayerAdded', console.log);
-        lyr.on('fallback', console.error);
+        const lyr = await L.stacLayer(feature, { debugLevel: 2 });
+        console.log({ lyr });
+        lyr.on('click', console.log);
         lyr.addTo(map);
-
-        map.fitBounds(lyr.getBounds());
+        const bounds = lyr.getBounds();
+        if (bounds) map.fitBounds(bounds);
       });
     </script>
   </body>

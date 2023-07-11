@@ -30,8 +30,19 @@
       const url_to_stac_item = "https://www.planet.com/data/stac/disasters/hurricane-harvey/hurricane-harvey-0831/20170831_172754_101c/20170831_172754_101c.json";
 
       fetch(url_to_stac_item).then(res => res.json()).then(async feature => {
-        const buildTileUrlTemplate = ({ asset, href, isVisual, item }) => {
-          if (isVisual) return "http://localhost:8000/cog/tiles/{z}/{x}/{y}?url={url}";
+        const buildTileUrlTemplate = ({ asset, href, item }) => {
+          let bands = asset.findVisualBands();
+          if (!bands) {
+            return "https://tiles.rdnt.io/tiles/{z}/{x}/{y}@2x?url={url}";
+          }
+          else {
+            let indices = [
+              bands.red.index,
+              bands.green.index,
+              bands.blue.index
+            ].join(',');
+            return "https://tiles.rdnt.io/tiles/{z}/{x}/{y}@2x?url={url}&bands=" + indices;
+          }
         };
         const lyr = await L.stacLayer(feature, { buildTileUrlTemplate, debugLevel: 2 });
         lyr.addTo(map);
