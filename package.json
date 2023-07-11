@@ -3,9 +3,9 @@
   "version": "0.15.0",
   "description": "Visualize a STAC Item or Collection on a Leaflet Map",
   "type": "module",
-  "main": "src/index.js",
-  "browser": "dist/stac-layer.min.js",
-  "module": "src/index.js",
+  "main": "./src/index.js",
+  "browser": "./dist/stac-layer.min.js",
+  "module": "./src/index.js",
   "exports": "./src/index.js",
   "directories": {
     "test": "test"
@@ -49,11 +49,11 @@
     "@turf/boolean-point-in-polygon": "^6.5.0",
     "easy-image-loader": "^0.1.0",
     "georaster": "^1.5.5",
-    "georaster-layer-for-leaflet": "^3.7.1",
-    "geotiff-epsg-code": "^0.2.0",
+    "georaster-layer-for-leaflet": "^3.10.0",
+    "geotiff-epsg-code": "^0.3.1",
     "leaflet": "^1.8.0",
-    "reproject-bbox": "^0.9.0",
-    "stac-js": "^0.0.8"
+    "reproject-bbox": "^0.12.0",
+    "stac-js": "0.0.8"
   },
   "devDependencies": {
     "@babel/cli": "^7.17.10",
@@ -75,5 +75,8 @@
     "> 1%",
     "last 2 versions",
     "not dead"
-  ]
+  ],
+  "engines": {
+    "node": "^18.0.0"
+  }
 }

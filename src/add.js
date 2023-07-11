@@ -114,15 +114,15 @@ export async function addDefaultGeoTiff(stac, layerGroup, options) {
 }
 
 export async function addGeoTiff(asset, layerGroup, options) {
-  return new Promise(async (resolve) => {
+  return new Promise(async resolve => {
     if (options.preferTileLayer) {
       return resolve(await addTileLayer(asset, layerGroup, options));
     }
 
-    const fallback = async (error) => {
+    const fallback = async error => {
       log(1, `activating fallback because "${error.message}"`);
       triggerEvent("fallback", { asset, error }, layerGroup);
-      return await addTileLayer(asset, layerGroup, options); 
+      return await addTileLayer(asset, layerGroup, options);
     };
 
     try {
@@ -145,7 +145,7 @@ export async function addGeoTiff(asset, layerGroup, options) {
       }
 
       let count = 0;
-      layer.on("tileerror", async (event) => {
+      layer.on("tileerror", async event => {
         // sometimes LeafletJS might issue multiple error events before the layer is removed from the map.
         // the counter makes sure we only active the fallback sequence once
         count++;

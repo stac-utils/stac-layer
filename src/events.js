@@ -75,8 +75,7 @@ export function onLayerGroupClick(event, layerGroup) {
       }
       if (stac instanceof APICollection) {
         stac.getAll().forEach(obj => layers.add(obj));
-      }
-      else {
+      } else {
         if (stac instanceof STACReference) {
           stac = stac.getContext();
         }

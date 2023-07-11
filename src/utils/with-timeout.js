@@ -1,5 +1,5 @@
 // wraps a function or promise in a timeout
-export const TIMEOUT = 5*1000;
+export const TIMEOUT = 5 * 1000;
 
 export default function withTimeout(ms, promiseOrFunction) {
   return new Promise((resolve, reject) => {

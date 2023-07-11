@@ -154,11 +154,11 @@ const stacLayer = async (data, options = {}) => {
     });
     addLayer(layer, layerGroup, data);
   } else if (data.isItem() || data.isCollection() || options.assets.length > 0) {
-    // No specific asset given by the user, visualize the default geotiff
     if (options.assets.length > 0) {
       log(2, "number of assets in options:", options.assets.length);
       promises = options.assets.map(asset => addAsset(asset, layerGroup, options).catch(logPromise));
     } else {
+      // No specific asset given by the user, visualize the default geotiff
       promises.push(
         addDefaultGeoTiff(data, layerGroup, options)
           .then(layer => {
