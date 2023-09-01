@@ -4,11 +4,21 @@
 <img src="./stac-layer.gif" height=200>
 
 # Install
+
+To install the version 1.0.0-beta.1 (rewrite based on stac-js):
+
+```bash
+npm install stac-layer@next
+```
+
+To install the old version 0.15.0:
+
 ```bash
 npm install stac-layer
 ```
 
 # Supported STAC types
+
 - STAC Collection (+ Assets)
 - STAC Item (+ Assets)
 - STAC API Collections
