@@ -14,7 +14,7 @@ export default async function imageOverlay(url, bounds, crossOrigin, options) {
     } catch {
       return null;
     }
-    const lyr = L.imageOverlay(url, bounds, options);
+    const lyr = L.imageOverlay(img, bounds, options);
     return lyr;
   } catch {
     return null;

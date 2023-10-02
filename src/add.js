@@ -192,7 +192,7 @@ export async function addThumbnail(thumbnails, layerGroup, options) {
     const layer = await imageOverlay(url, bounds, options.crossOrigin);
     if (layer === null) {
       log(1, "image layer is null", url);
-      return addThumbnail(thumbnails, layerGroup, options); // Retry with the remaining thumbnails
+      return await addThumbnail(thumbnails, layerGroup, options); // Retry with the remaining thumbnails
     }
     addLayer(layer, layerGroup, asset);
     return await new Promise(resolve => {
