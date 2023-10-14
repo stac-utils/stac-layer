@@ -64,7 +64,7 @@ export async function addTileLayer(asset, layerGroup, options) {
     const key = asset.getKey();
     const bounds = getBounds(asset, options);
     if (options.buildTileUrlTemplate) {
-      const tileUrlTemplate = options.buildTileUrlTemplate({
+      const tileUrlTemplate = await options.buildTileUrlTemplate({
         href,
         url: href,
         asset,
