@@ -151,12 +151,12 @@ that are Cloud-Optimized GeoTIFFs.
 #### buildTileUrlTemplate
 > function (default: undefined)
 
-If you need more dynamic customization, consider passing in a `buildTileUrlTemplate` function. You can use this function to change the tile url and its parameters depending on the 
+If you need more dynamic customization, consider passing in an async `buildTileUrlTemplate` function. You can use this function to change the tile url and its parameters depending on the 
 type of asset.
 
 ```js
 const layer = stacLayer(data, {
-  buildTileUrlTemplate: ({
+  buildTileUrlTemplate: async ({
     href, // the url to the GeoTIFF
     asset, // the STAC Asset object
     key, // the key or name in the assets object that points to the particular asset
