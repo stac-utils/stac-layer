@@ -1,3 +1,5 @@
+⚠️ This project should still work, but is no longer maintained.  If you can use OpenLayers, consider using [ol-stac](https://github.com/moregeo-it/ol-stac).  If you are interested in helping maintain stac-layer, please reach out to the STAC community or send an email to Daniel Dufour at daniel.j.dufour@gmail.com or Matthias Mohr at m.mohr@moregeo.it.
+
 # stac-layer
 > Visualize [STAC](https://stacspec.org/) data on a [LeafletJS](https://leafletjs.com/) map
 
