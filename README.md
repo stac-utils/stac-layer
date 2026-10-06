@@ -1,3 +1,5 @@
+⚠️ This project should still work, but is no longer maintained.  If you are interested in helping maintain it, please reach out to the STAC community or send an email to daniel.j.dufour@gmail.com.
+
 # stac-layer
 > Visualize [STAC](https://stacspec.org/) data on a [LeafletJS](https://leafletjs.com/) map
 
